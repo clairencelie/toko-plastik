@@ -22,9 +22,19 @@ class PenerimaanController extends Controller
         $this->financeService = $financeService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $penerimaans = Penerimaan::with('supplierRel')->paginate(20);
+        $query = Penerimaan::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nopenerimaan', 'like', "%{$search}%")
+                  ->orWhere('namasupplier', 'like', "%{$search}%");
+            });
+        }
+
+        $penerimaans = $query->orderBy('tglpenerimaan', 'desc')->paginate(20);
         return view('penerimaan.index', compact('penerimaans'));
     }
 

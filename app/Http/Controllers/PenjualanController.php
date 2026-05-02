@@ -22,9 +22,19 @@ class PenjualanController extends Controller
         $this->financeService = $financeService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $penjualans = Penjualan::with('pelangganRel')->paginate(20);
+        $query = Penjualan::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nopenjualan', 'like', "%{$search}%")
+                  ->orWhere('namapelanggan', 'like', "%{$search}%");
+            });
+        }
+
+        $penjualans = $query->orderBy('tglpenjualan', 'desc')->paginate(20);
         return view('penjualan.index', compact('penjualans'));
     }
 

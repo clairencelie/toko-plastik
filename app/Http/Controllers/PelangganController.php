@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 class PelangganController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pelanggans = Pelanggan::paginate(20);
+        $query = Pelanggan::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('namapelanggan', 'like', "%{$search}%")
+                  ->orWhere('kodepelanggan', 'like', (int)$search);
+            });
+        }
+
+        $pelanggans = $query->paginate(20);
         
         // Map real-time piutang from AR table
         $pelanggans->getCollection()->transform(function($p) {

@@ -13,9 +13,19 @@ use App\Models\Mutasibarang;
 
 class BarangController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $barangs = Barang::with(['kelompokRel', 'kemasanRel', 'satuanRel'])->paginate(20);
+        $query = Barang::with(['kelompokRel', 'kemasanRel', 'satuanRel']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('namabarang', 'like', "%{$search}%")
+                  ->orWhere('kodebarang', 'like', "%{$search}%");
+            });
+        }
+
+        $barangs = $query->paginate(20);
         return view('barang.index', compact('barangs'));
     }
 

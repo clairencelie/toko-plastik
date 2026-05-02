@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $suppliers = Supplier::paginate(20);
+        $query = Supplier::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('keterangan', 'like', "%{$search}%")
+                  ->orWhere('supplier', 'like', (int)$search);
+            });
+        }
+
+        $suppliers = $query->paginate(20);
         
         // Map real-time hutang from AP table
         $suppliers->getCollection()->transform(function($s) {
