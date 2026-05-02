@@ -11,6 +11,7 @@ class Penjualandetail extends Model
     protected $table = 'penjualandetail';
     public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
 
     public function header()
     {

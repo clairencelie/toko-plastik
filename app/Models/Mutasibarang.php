@@ -12,6 +12,7 @@ class Mutasibarang extends Model
     protected $primaryKey = 'kodebarang';
     public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
     public function barang()
     {
         return $this->belongsTo(Barang::class, 'kodebarang', 'kodebarang');

@@ -38,8 +38,7 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'autoid' => 'required|integer|unique:supplier,autoid',
-            'namasupplier' => 'required',
+            'keterangan' => 'required',
         ]);
 
         Supplier::create($request->all());
@@ -57,7 +56,7 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::findOrFail($id);
         $request->validate([
-            'namasupplier' => 'required',
+            'keterangan' => 'required',
         ]);
 
         $supplier->update($request->all());

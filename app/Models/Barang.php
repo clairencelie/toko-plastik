@@ -11,8 +11,8 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'kodebarang';
-    public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
 
     public function kelompokRel()
     {

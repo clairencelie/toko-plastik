@@ -38,7 +38,6 @@ class PelangganController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'autoid' => 'required|integer|unique:pelanggan,autoid',
             'namapelanggan' => 'required',
         ]);
 

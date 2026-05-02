@@ -25,8 +25,19 @@ class BarangController extends Controller
             });
         }
 
+        if ($request->filled('kelompok')) {
+            $query->where('kelompok', $request->kelompok);
+        }
+
+        if ($request->filled('supplier')) {
+            $query->where('supplier', $request->supplier);
+        }
+
         $barangs = $query->paginate(20);
-        return view('barang.index', compact('barangs'));
+        $kelompoks = Kelompok::all();
+        $suppliers = Supplier::all();
+        
+        return view('barang.index', compact('barangs', 'kelompoks', 'suppliers'));
     }
 
     public function create()
@@ -41,7 +52,6 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'kodebarang' => 'required|unique:barang,kodebarang',
             'namabarang' => 'required',
             'kelompok' => 'required',
             'kemasan' => 'required',
@@ -50,11 +60,11 @@ class BarangController extends Controller
         ]);
 
         \DB::transaction(function() use ($request) {
-            Barang::create($request->all());
+            $barang = Barang::create($request->all());
             
             // Create initial mutasibarang
             Mutasibarang::create([
-                'kodebarang' => $request->kodebarang,
+                'kodebarang' => $barang->kodebarang,
                 'saldoawal' => 0,
                 'beli' => 0,
                 'returbeli' => 0,

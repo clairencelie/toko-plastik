@@ -13,6 +13,7 @@ class Penerimaandetail extends Model
     // We will treat it as having no single primary key for standard Eloquent usage
     public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
 
     public function header()
     {

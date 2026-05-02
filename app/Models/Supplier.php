@@ -10,6 +10,6 @@ class Supplier extends Model
     use HasFactory;
     protected $table = 'supplier';
     protected $primaryKey = 'supplier';
-    public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
 }

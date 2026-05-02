@@ -12,6 +12,7 @@ class Penjualan extends Model
     protected $primaryKey = 'nopenjualan';
     public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = [];
 
     public function details()
     {
