@@ -11,4 +11,21 @@ class Fifostock extends Model
     protected $table = 'fifostock';
     public $incrementing = false;
     public $timestamps = false;
+    protected $fillable = [
+        'nobukti',
+        'kodebarang',
+        'nourut',
+        'waktu',
+        'harga',
+        'masuk',
+        'keluar',
+        'saldo',
+        'returmasuk',
+        'returkeluar',
+        'hargabonus',
+    ];
+
+    // If no primary key or not auto-incrementing, set primary key manually
+    // protected $primaryKey = 'nobuktu'; 
+    // public $incrementing = false; 
 }

@@ -66,8 +66,14 @@ class SupplierController extends Controller
 
     public function destroy($id)
     {
-        $supplier = Supplier::findOrFail($id);
-        $supplier->delete();
-        return redirect()->route('supplier.index')->with('success', 'Supplier berhasil dihapus');
+        try {
+            $supplier = Supplier::findOrFail($id);
+            $supplier->delete();
+            return redirect()->route('supplier.index')->with('success', 'Supplier berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('supplier.index')->with('error', 'Gagal menghapus Supplier karena masih terikat dengan data transaksi lain.');
+        } catch (\Exception $e) {
+            return redirect()->route('supplier.index')->with('error', 'Terjadi kesalahan saat menghapus Supplier: ' . $e->getMessage());
+        }
     }
 }

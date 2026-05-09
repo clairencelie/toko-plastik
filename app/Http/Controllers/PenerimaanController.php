@@ -13,15 +13,6 @@ use Illuminate\Support\Facades\DB;
 
 class PenerimaanController extends Controller
 {
-    protected $inventoryService;
-    protected $financeService;
-
-    public function __construct(InventoryService $inventoryService, FinanceService $financeService)
-    {
-        $this->inventoryService = $inventoryService;
-        $this->financeService = $financeService;
-    }
-
     public function index(Request $request)
     {
         $query = Penerimaan::query();
@@ -61,9 +52,9 @@ class PenerimaanController extends Controller
                 'biayapenerimaan' => 0,
                 'grandtotal' => $request->grandtotal,
                 'pengguna' => 1,
-                'kredit' => $request->grandtotal - $request->tunai,
-                'tunai' => $request->tunai,
-                'tgljatuhtempo' => $request->tgljatuhtempo,
+                'kredit' => max(0, $request->grandtotal - $request->tunai),
+                'tunai' => min($request->tunai, $request->grandtotal),
+                'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenerimaan,
                 'waktu' => now(),
             ]);
 
@@ -82,30 +73,6 @@ class PenerimaanController extends Controller
                     'namasatuan' => 'PCS',
                     'namabarang' => Barang::find($item['kodebarang'])->namabarang,
                 ]);
-
-                // Update Stock via InventoryService
-                $this->inventoryService->addStock(
-                    $penerimaan->nopenerimaan,
-                    $item['kodebarang'],
-                    $index + 1,
-                    $item['jumlah'],
-                    $item['harga'],
-                    $penerimaan->tglpenerimaan
-                );
-            }
-
-            // Handle Accounts Payable (Hutang)
-            if ($penerimaan->kredit > 0) {
-                $this->financeService->createAP(
-                    'AP-' . $penerimaan->nopenerimaan,
-                    $penerimaan->tglpenerimaan,
-                    $penerimaan->nopenerimaan,
-                    $penerimaan->supplier,
-                    $penerimaan->grandtotal,
-                    $penerimaan->tunai,
-                    $penerimaan->kredit,
-                    $penerimaan->tgljatuhtempo
-                );
             }
         });
 

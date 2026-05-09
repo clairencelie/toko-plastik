@@ -66,8 +66,14 @@ class PelangganController extends Controller
 
     public function destroy($id)
     {
-        $pelanggan = Pelanggan::findOrFail($id);
-        $pelanggan->delete();
-        return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil dihapus');
+        try {
+            $pelanggan = Pelanggan::findOrFail($id);
+            $pelanggan->delete();
+            return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('pelanggan.index')->with('error', 'Gagal menghapus Pelanggan karena masih terikat dengan data transaksi lain.');
+        } catch (\Exception $e) {
+            return redirect()->route('pelanggan.index')->with('error', 'Terjadi kesalahan saat menghapus Pelanggan: ' . $e->getMessage());
+        }
     }
 }

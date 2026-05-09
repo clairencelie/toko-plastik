@@ -13,24 +13,15 @@ use Illuminate\Support\Facades\DB;
 
 class PenjualanController extends Controller
 {
-    protected $inventoryService;
-    protected $financeService;
-
-    public function __construct(InventoryService $inventoryService, FinanceService $financeService)
-    {
-        $this->inventoryService = $inventoryService;
-        $this->financeService = $financeService;
-    }
-
     public function index(Request $request)
     {
         $query = Penjualan::query();
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nopenjualan', 'like', "%{$search}%")
-                  ->orWhere('namapelanggan', 'like', "%{$search}%");
+                    ->orWhere('namapelanggan', 'like', "%{$search}%");
             });
         }
 
@@ -47,13 +38,13 @@ class PenjualanController extends Controller
 
     public function store(Request $request)
     {
-        return DB::transaction(function() use ($request) {
+        return DB::transaction(function () use ($request) {
             $penjualan = Penjualan::create([
                 'nopenjualan' => $request->nopenjualan,
                 'tglpenjualan' => $request->tglpenjualan,
-                'tgljatuhtempo' => $request->tgljatuhtempo,
-                'pelanggan' => $request->pelanggan_id,
-                'namapelanggan' => Pelanggan::find($request->pelanggan_id)->namapelanggan,
+                'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenjualan,
+                'pelanggan' => $request->kodepelanggan,
+                'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan,
                 'salesman' => 0, // Default for now
                 'namasalesman' => 'ADMIN',
                 'totalbarang' => $request->grandtotal,
@@ -68,15 +59,6 @@ class PenjualanController extends Controller
             ]);
 
             foreach ($request->items as $index => $item) {
-                // 1. Calculate HPP using FIFO via InventoryService
-                $totalHPP = $this->inventoryService->reduceStock(
-                    $penjualan->nopenjualan,
-                    $item['kodebarang'],
-                    $index + 1,
-                    $item['jumlah'],
-                    $penjualan->tglpenjualan
-                );
-
                 // 2. Create detail record
                 Penjualandetail::create([
                     'nopenjualan' => $penjualan->nopenjualan,
@@ -89,24 +71,10 @@ class PenjualanController extends Controller
                     'harga' => $item['harga'],
                     'diskon' => 0,
                     'subtotal' => $item['jumlah'] * $item['harga'],
-                    'hppsubtotal' => $totalHPP,
+                    'hppsubtotal' => 0, // DB trigger will calculate this
                     'tglpenjualan' => $penjualan->tglpenjualan,
                     'hargadiskon' => $item['harga'],
                 ]);
-            }
-
-            // 3. Handle Accounts Receivable (Piutang) if not fully paid
-            if ($penjualan->kredit > 0) {
-                $this->financeService->createAR(
-                    'AR-' . $penjualan->nopenjualan,
-                    $penjualan->tglpenjualan,
-                    $penjualan->nopenjualan,
-                    $penjualan->pelanggan,
-                    $penjualan->grandtotal,
-                    $penjualan->tunai,
-                    $penjualan->kredit,
-                    $penjualan->tgljatuhtempo
-                );
             }
 
             return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil dicatat');

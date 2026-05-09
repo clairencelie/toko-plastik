@@ -106,9 +106,15 @@ class BarangController extends Controller
 
     public function destroy($id)
     {
-        $barang = Barang::findOrFail($id);
-        // Should check if stock exists before deleting
-        $barang->delete();
-        return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus');
+        try {
+            $barang = Barang::findOrFail($id);
+            // Should check if stock exists before deleting, but DB constraint will also catch it
+            $barang->delete();
+            return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('barang.index')->with('error', 'Gagal menghapus Barang karena sudah terikat dengan mutasi atau data transaksi lain.');
+        } catch (\Exception $e) {
+            return redirect()->route('barang.index')->with('error', 'Terjadi kesalahan saat menghapus Barang: ' . $e->getMessage());
+        }
     }
 }
