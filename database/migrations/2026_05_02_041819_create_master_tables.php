@@ -61,7 +61,8 @@ return new class extends Migration
             $table->integer('satuan');
             $table->decimal('isisatuan', 6, 2)->nullable();
             $table->integer('supplier');
-            $table->decimal('hargabeli', 9, 2);
+            $table->decimal('hargabeli', 11, 2);
+            $table->decimal('hargajual', 11, 2)->default(0);
             $table->string('lokasi', 10)->nullable();
             $table->decimal('stokminimal', 7, 2)->nullable();
             $table->boolean('aktif')->default(true);

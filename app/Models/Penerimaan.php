@@ -10,6 +10,7 @@ class Penerimaan extends Model
     use HasFactory;
     protected $table = 'penerimaan';
     protected $primaryKey = 'nopenerimaan';
+    protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;
     protected $guarded = [];

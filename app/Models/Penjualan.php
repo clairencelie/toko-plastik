@@ -10,6 +10,7 @@ class Penjualan extends Model
     use HasFactory;
     protected $table = 'penjualan';
     protected $primaryKey = 'nopenjualan';
+    protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;
     protected $guarded = [];

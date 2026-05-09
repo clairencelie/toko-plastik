@@ -33,18 +33,48 @@ class PenjualanController extends Controller
     {
         $pelanggans = Pelanggan::all();
         $barangs = Barang::all();
-        return view('penjualan.create', compact('pelanggans', 'barangs'));
+        $nopenjualan = $this->generateNoPenjualan();
+        return view('penjualan.create', compact('pelanggans', 'barangs', 'nopenjualan'));
+    }
+
+    public function show($id)
+    {
+        $penjualan = Penjualan::with(['details', 'pelangganRel'])->findOrFail($id);
+        return view('penjualan.show', compact('penjualan'));
+    }
+
+    public function printInvoice($id)
+    {
+        $penjualan = Penjualan::with(['details', 'pelangganRel'])->findOrFail($id);
+        return view('penjualan.invoice', compact('penjualan'));
+    }
+
+    private function generateNoPenjualan()
+    {
+        $prefix = 'SP-' . date('Y');
+        $last = Penjualan::where('nopenjualan', 'like', $prefix . '%')
+            ->orderBy('nopenjualan', 'desc')
+            ->first();
+
+        if (!$last) {
+            return $prefix . '0001';
+        }
+
+        $lastNumber = (int) substr($last->nopenjualan, -4);
+        $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix . $newNumber;
     }
 
     public function store(Request $request)
     {
         return DB::transaction(function () use ($request) {
             $penjualan = Penjualan::create([
-                'nopenjualan' => $request->nopenjualan,
+                'nopenjualan' => $this->generateNoPenjualan(),
                 'tglpenjualan' => $request->tglpenjualan,
                 'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenjualan,
                 'pelanggan' => $request->kodepelanggan,
-                'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan,
+                'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan ?? '-',
                 'salesman' => 0, // Default for now
                 'namasalesman' => 'ADMIN',
                 'totalbarang' => $request->grandtotal,

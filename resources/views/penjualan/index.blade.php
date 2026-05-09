@@ -57,7 +57,7 @@
                         <td class="text-end text-success">Rp {{ number_format($penjualan->tunai, 0, ',', '.') }}</td>
                         <td class="text-end text-danger">Rp {{ number_format($penjualan->kredit, 0, ',', '.') }}</td>
                         <td class="text-center pe-4">
-                            <a href="#" class="btn btn-sm btn-outline-secondary" title="Detail"><i class="fas fa-eye"></i></a>
+                            <a href="{{ route('penjualan.show', $penjualan->nopenjualan) }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail"><i class="fas fa-eye"></i></a>
                         </td>
                     </tr>
                     @empty

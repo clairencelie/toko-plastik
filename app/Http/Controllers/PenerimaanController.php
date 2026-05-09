@@ -33,7 +33,31 @@ class PenerimaanController extends Controller
     {
         $suppliers = Supplier::all();
         $barangs = Barang::all();
-        return view('penerimaan.create', compact('suppliers', 'barangs'));
+        $nopenerimaan = $this->generateNoPenerimaan();
+        return view('penerimaan.create', compact('suppliers', 'barangs', 'nopenerimaan'));
+    }
+
+    public function show($id)
+    {
+        $penerimaan = Penerimaan::with(['details', 'supplierRel'])->findOrFail($id);
+        return view('penerimaan.show', compact('penerimaan'));
+    }
+
+    private function generateNoPenerimaan()
+    {
+        $prefix = 'BPE-' . date('Y');
+        $last = Penerimaan::where('nopenerimaan', 'like', $prefix . '%')
+            ->orderBy('nopenerimaan', 'desc')
+            ->first();
+
+        if (!$last) {
+            return $prefix . '0001';
+        }
+
+        $lastNumber = (int) substr($last->nopenerimaan, -4);
+        $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix . $newNumber;
     }
 
     public function store(Request $request)
@@ -43,10 +67,10 @@ class PenerimaanController extends Controller
         
         DB::transaction(function() use ($request) {
             $penerimaan = Penerimaan::create([
-                'nopenerimaan' => $request->nopenerimaan,
+                'nopenerimaan' => $this->generateNoPenerimaan(),
                 'tglpenerimaan' => $request->tglpenerimaan,
                 'supplier' => $request->supplier_id,
-                'namasupplier' => Supplier::find($request->supplier_id)->keterangan,
+                'namasupplier' => Supplier::find($request->supplier_id)->keterangan ?? '-',
                 'totalbarang' => $request->grandtotal, // Total before discount
                 'totaldiskon' => 0,
                 'biayapenerimaan' => 0,
