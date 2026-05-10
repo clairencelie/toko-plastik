@@ -150,24 +150,33 @@
                     <i class="fas fa-shopping-bag text-white fa-lg"></i>
                 </div>
                 <div>
-                    <h5 class="fw-bold mb-0 text-white">Toko Plastik</h5>
+                    <h5 class="fw-bold mb-0 text-white">Stephany Plastik</h5>
                     <span class="badge bg-warning text-dark small" style="font-size: 0.6rem">PREMIUM ADMIN</span>
                 </div>
             </div>
         </div>
         
         <div class="flex-grow-1 overflow-auto px-3 pb-4">
+            @php
+                $role = auth()->user()->role;
+            @endphp
             <nav class="nav flex-column">
-                <div class="mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Master Data</div>
+                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+
+                <div class="mt-3 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Master Data</div>
                 <a href="{{ route('barang.index') }}" class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}">
                     <i class="fas fa-cube"></i> Master Barang
                 </a>
+                @if($role === 'owner')
                 <a href="{{ route('pelanggan.index') }}" class="nav-link {{ request()->routeIs('pelanggan.*') ? 'active' : '' }}">
                     <i class="fas fa-user-group"></i> Pelanggan
                 </a>
                 <a href="{{ route('supplier.index') }}" class="nav-link {{ request()->routeIs('supplier.*') ? 'active' : '' }}">
                     <i class="fas fa-truck-fast"></i> Supplier
                 </a>
+                @endif
                 
                 <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Transaksi</div>
                 <a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->routeIs('penjualan.*') ? 'active' : '' }}">
@@ -176,39 +185,53 @@
                 <a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->routeIs('penerimaan.*') ? 'active' : '' }}">
                     <i class="fas fa-cart-flatbed"></i> Pembelian
                 </a>
+                @if($role === 'owner')
                 <a href="{{ route('adjustmen.index') }}" class="nav-link {{ request()->routeIs('adjustmen.*') ? 'active' : '' }}">
                     <i class="fas fa-sliders"></i> Adjustment Stok
                 </a>
+                @endif
 
                 <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Keuangan</div>
                 <a href="{{ route('tagihan.index') }}" class="nav-link {{ request()->routeIs('tagihan.*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar"></i> Penagihan
                 </a>
+                @if($role === 'owner')
                 <a href="{{ route('kasmasuk.index') }}" class="nav-link {{ request()->routeIs('kasmasuk.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-trend-up"></i> Pelunasan Piutang
                 </a>
                 <a href="{{ route('kaskeluar.index') }}" class="nav-link {{ request()->routeIs('kaskeluar.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-transfer"></i> Pelunasan Hutang
                 </a>
+                @endif
                 
                 <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Analitik</div>
                 <a href="{{ route('report.stock') }}" class="nav-link {{ request()->routeIs('report.stock') ? 'active' : '' }}">
                     <i class="fas fa-chart-pie"></i> Stok Opname
                 </a>
+                @if($role === 'owner')
                 <a href="{{ route('report.financial') }}" class="nav-link {{ request()->routeIs('report.financial') ? 'active' : '' }}">
                     <i class="fas fa-wallet"></i> Laporan Keuangan
                 </a>
+                @endif
             </nav>
         </div>
 
         <div class="mt-auto p-4 border-top border-secondary border-opacity-10 bg-black bg-opacity-25">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem">AD</div>
-                <div>
-                    <div class="text-white small fw-bold">Admin Toko</div>
-                    <div class="text-muted" style="font-size: 0.7rem">Administrator</div>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div class="text-white small fw-bold text-truncate">{{ auth()->user()->name }}</div>
+                    <div class="text-muted" style="font-size: 0.7rem">{{ ucfirst(auth()->user()->role) }}</div>
                 </div>
             </div>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100 py-2 border-0" style="background: rgba(239, 68, 68, 0.1);">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </button>
+            </form>
         </div>
     </div>
 

@@ -11,9 +11,11 @@
             </ol>
         </nav>
     </div>
+    @if(auth()->user()->role === 'owner')
     <a href="{{ route('barang.create') }}" class="btn btn-primary shadow-sm px-4 py-2">
         <i class="fas fa-plus me-2"></i> Tambah Barang
     </a>
+    @endif
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -70,7 +72,9 @@
                         <th>Kelompok</th>
                         <th>Satuan</th>
                         <th class="text-end">Harga Beli</th>
+                        @if(auth()->user()->role === 'owner')
                         <th class="text-center pe-4">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -90,6 +94,7 @@
                         <td><span class="badge bg-soft-primary text-primary border border-primary border-opacity-10">{{ $barang->kelompokRel->keterangan ?? '-' }}</span></td>
                         <td>{{ $barang->satuanRel->keterangan ?? '-' }}</td>
                         <td class="text-end fw-bold text-dark">Rp {{ number_format($barang->hargabeli, 0, ',', '.') }}</td>
+                        @if(auth()->user()->role === 'owner')
                         <td class="text-center pe-4">
                             <div class="btn-group shadow-sm rounded-3">
                                 <a href="{{ route('barang.edit', $barang->kodebarang) }}" class="btn btn-sm btn-white border-end" title="Edit">
@@ -104,6 +109,7 @@
                                 </form>
                             </div>
                         </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
