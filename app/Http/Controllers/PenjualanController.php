@@ -32,7 +32,7 @@ class PenjualanController extends Controller
     public function create()
     {
         $pelanggans = Pelanggan::all();
-        $barangs = Barang::all();
+        $barangs = Barang::with('stok')->get();
         $nopenjualan = $this->generateNoPenjualan();
         return view('penjualan.create', compact('pelanggans', 'barangs', 'nopenjualan'));
     }
@@ -68,46 +68,50 @@ class PenjualanController extends Controller
 
     public function store(Request $request)
     {
-        return DB::transaction(function () use ($request) {
-            $penjualan = Penjualan::create([
-                'nopenjualan' => $this->generateNoPenjualan(),
-                'tglpenjualan' => $request->tglpenjualan,
-                'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenjualan,
-                'pelanggan' => $request->kodepelanggan,
-                'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan ?? '-',
-                'salesman' => 0, // Default for now
-                'namasalesman' => 'ADMIN',
-                'totalbarang' => $request->grandtotal,
-                'totaldiskon' => 0,
-                'grandtotal' => $request->grandtotal,
-                'hpptotal' => 0, // Will be updated after details
-                'tunai' => min($request->tunai, $request->grandtotal),
-                'kredit' => max(0, $request->grandtotal - $request->tunai),
-                'pengguna' => 1,
-                'shift' => 1,
-                'waktu' => now(),
-            ]);
-
-            foreach ($request->items as $index => $item) {
-                // 2. Create detail record
-                Penjualandetail::create([
-                    'nopenjualan' => $penjualan->nopenjualan,
-                    'nourut' => $index + 1,
-                    'kodebarang' => $item['kodebarang'],
-                    'namabarang' => Barang::find($item['kodebarang'])->namabarang,
-                    'satuan' => $item['satuan'],
-                    'namasatuan' => 'PCS',
-                    'jumlah' => $item['jumlah'],
-                    'harga' => $item['harga'],
-                    'diskon' => 0,
-                    'subtotal' => $item['jumlah'] * $item['harga'],
-                    'hppsubtotal' => 0, // DB trigger will calculate this
-                    'tglpenjualan' => $penjualan->tglpenjualan,
-                    'hargadiskon' => $item['harga'],
+        try {
+            return DB::transaction(function () use ($request) {
+                $penjualan = Penjualan::create([
+                    'nopenjualan' => $this->generateNoPenjualan(),
+                    'tglpenjualan' => $request->tglpenjualan,
+                    'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenjualan,
+                    'pelanggan' => $request->kodepelanggan,
+                    'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan ?? '-',
+                    'salesman' => 0, // Default for now
+                    'namasalesman' => 'ADMIN',
+                    'totalbarang' => $request->grandtotal,
+                    'totaldiskon' => 0,
+                    'grandtotal' => $request->grandtotal,
+                    'hpptotal' => 0, // Will be updated after details
+                    'tunai' => min($request->tunai, $request->grandtotal),
+                    'kredit' => max(0, $request->grandtotal - $request->tunai),
+                    'pengguna' => 1,
+                    'shift' => 1,
+                    'waktu' => now(),
                 ]);
-            }
 
-            return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil dicatat');
-        });
+                foreach ($request->items as $index => $item) {
+                    $barang = Barang::with('satuanRel')->find($item['kodebarang']);
+                    Penjualandetail::create([
+                        'nopenjualan' => $penjualan->nopenjualan,
+                        'nourut' => $index + 1,
+                        'kodebarang' => $item['kodebarang'],
+                        'namabarang' => $barang->namabarang,
+                        'satuan' => $barang->satuan,
+                        'namasatuan' => $barang->satuanRel->keterangan ?? 'PCS',
+                        'jumlah' => $item['jumlah'],
+                        'harga' => $item['harga'],
+                        'diskon' => 0,
+                        'subtotal' => $item['jumlah'] * $item['harga'],
+                        'hppsubtotal' => 0, // DB trigger will calculate this
+                        'tglpenjualan' => $penjualan->tglpenjualan,
+                        'hargadiskon' => $item['harga'],
+                    ]);
+                }
+
+                return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil dicatat');
+            });
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menyimpan: ' . $e->getMessage()])->withInput();
+        }
     }
 }

@@ -13,6 +13,16 @@
     </div>
 </div>
 
+@if($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm mb-4">
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <form action="{{ route('penerimaan.store') }}" method="POST" id="penerimaan-form">
     @csrf
     <div class="row g-4">
@@ -30,7 +40,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-muted text-uppercase">Supplier</label>
-                            <select name="supplier_id" class="form-select select2" required>
+                            <select name="supplier_id" class="form-select select2-supplier" required>
                                 <option value="">Pilih Supplier</option>
                                 @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->supplier }}">{{ $supplier->keterangan }}</option>
@@ -67,16 +77,19 @@
                             <tbody>
                                 <tr class="item-row">
                                     <td class="p-3">
-                                        <select name="items[0][kodebarang]" class="form-select item-select" required>
+                                        <select name="items[0][kodebarang]" class="form-select item-select select2-barang" required>
                                             <option value="">Pilih Barang</option>
                                             @foreach ($barangs as $barang)
-                                                <option value="{{ $barang->kodebarang }}" data-price="{{ $barang->hargabeli ?? 0 }}">{{ $barang->namabarang }}</option>
+                                                <option value="{{ $barang->kodebarang }}" 
+                                                    data-price="{{ $barang->hargabeli ?? 0 }}"
+                                                    data-stock="{{ $barang->stok->saldoakhir ?? 0 }}">
+                                                    {{ $barang->namabarang }} (Stok: {{ $barang->stok->saldoakhir ?? 0 }})
+                                                </option>
                                             @endforeach
                                         </select>
-                                        <input type="hidden" name="items[0][satuan]" value="1">
                                     </td>
                                     <td>
-                                        <input type="number" name="items[0][jumlah]" class="form-control text-center qty" min="1" step="0.01" required>
+                                        <input type="number" name="items[0][jumlah]" class="form-control text-center qty" min="0.01" step="0.01" required>
                                     </td>
                                     <td>
                                         <input type="number" name="items[0][harga]" class="form-control text-end price" step="0.01" required>
@@ -123,72 +136,93 @@
     </div>
 </form>
 
+@push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const itemTable = document.getElementById('item-table').getElementsByTagName('tbody')[0];
-        const addRowBtn = document.getElementById('add-row');
-        const grandTotalEl = document.getElementById('grand-total');
-        const inputGrandTotal = document.getElementById('input-grandtotal');
+    $(document).ready(function() {
+        function initSelect2() {
+            $('.select2-supplier').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Pilih Supplier'
+            });
+            $('.select2-barang').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Pilih Barang'
+            });
+        }
+
+        initSelect2();
+
+        const itemTable = $('#item-table tbody');
         let rowCount = 1;
 
-        addRowBtn.addEventListener('click', function() {
-            const newRow = itemTable.rows[0].cloneNode(true);
+        $('#add-row').click(function() {
+            const newRow = $('.item-row:first').clone();
             
-            // Clear inputs and update names
-            const inputs = newRow.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.name = input.name.replace('[0]', `[${rowCount}]`);
-                input.value = '';
-                if (input.classList.contains('qty')) input.value = '';
-                if (input.classList.contains('price')) input.value = '';
+            // Clean up Select2 artifacts from the clone
+            newRow.find('.select2-container').remove();
+            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden');
+            newRow.find('option').removeAttr('data-select2-id');
+            
+            // Reset values
+            newRow.find('input').val('');
+            newRow.find('.qty').val('');
+            newRow.find('.price').val('');
+            newRow.find('.subtotal-text').text('0');
+            newRow.find('.remove-row').show();
+
+            newRow.find('input, select').each(function() {
+                const name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/\[\d+\]/, `[${rowCount}]`));
+                }
             });
 
-            newRow.querySelector('.subtotal-text').innerText = '0';
-            newRow.querySelector('.remove-row').style.display = 'block';
+            itemTable.append(newRow);
             
-            itemTable.appendChild(newRow);
+            // Re-init only the new select
+            newRow.find('.select2-barang').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Pilih Barang'
+            });
+            
             rowCount++;
         });
 
-        itemTable.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-row')) {
-                e.target.closest('tr').remove();
-                updateGrandTotal();
-            }
+        $(document).on('click', '.remove-row', function() {
+            $(this).closest('tr').remove();
+            updateGrandTotal();
         });
 
-        document.addEventListener('input', function(e) {
-            if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
-                calculateRow(e.target.closest('tr'));
-            }
+        $(document).on('change', '.select2-barang', function() {
+            const row = $(this).closest('tr');
+            const option = $(this).find(':selected');
+            const price = option.data('price') || 0;
+            
+            row.find('.price').val(price);
+            calculateRow(row);
         });
 
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('item-select')) {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                const price = selectedOption.dataset.price || 0;
-                const row = e.target.closest('tr');
-                row.querySelector('.price').value = price;
-                calculateRow(row);
-            }
+        $(document).on('input', '.qty, .price', function() {
+            calculateRow($(this).closest('tr'));
         });
 
         function calculateRow(row) {
-            const qty = parseFloat(row.querySelector('.qty').value) || 0;
-            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const qty = parseFloat(row.find('.qty').val()) || 0;
+            const price = parseFloat(row.find('.price').val()) || 0;
             const subtotal = qty * price;
-            row.querySelector('.subtotal-text').innerText = subtotal.toLocaleString('id-ID');
+            row.find('.subtotal-text').text(subtotal.toLocaleString('id-ID'));
             updateGrandTotal();
         }
 
         function updateGrandTotal() {
             let total = 0;
-            document.querySelectorAll('.subtotal-text').forEach(el => {
-                total += parseFloat(el.innerText.replace(/\./g, '').replace(',', '.')) || 0;
+            $('.subtotal-text').each(function() {
+                total += parseFloat($(this).text().replace(/\./g, '').replace(',', '.')) || 0;
             });
-            grandTotalEl.innerText = total.toLocaleString('id-ID');
-            inputGrandTotal.value = total;
+            $('#grand-total').text(total.toLocaleString('id-ID'));
+            $('#input-grandtotal').val(total);
         }
     });
 </script>
+@endpush
 @endsection

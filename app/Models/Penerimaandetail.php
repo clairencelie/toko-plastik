@@ -12,6 +12,7 @@ class Penerimaandetail extends Model
     // Laravel does not support composite primary keys [nopenerimaan, nourut]
     // We will treat it as having no single primary key for standard Eloquent usage
     public $incrementing = false;
+    protected $primaryKey = null;
     public $timestamps = false;
     protected $guarded = [];
 

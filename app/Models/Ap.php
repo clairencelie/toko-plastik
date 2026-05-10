@@ -10,6 +10,7 @@ class Ap extends Model
     use HasFactory;
     protected $table = 'ap';
     protected $primaryKey = 'noap';
+    protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;
 

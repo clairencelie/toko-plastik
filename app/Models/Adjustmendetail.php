@@ -5,18 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Penjualandetail extends Model
+class Adjustmendetail extends Model
 {
     use HasFactory;
-    protected $table = 'penjualandetail';
+
+    protected $table = 'adjustmendetail';
     public $incrementing = false;
     protected $primaryKey = null;
     public $timestamps = false;
     protected $guarded = [];
 
-    public function header()
+    public function adjustmen()
     {
-        return $this->belongsTo(Penjualan::class, 'nopenjualan', 'nopenjualan');
+        return $this->belongsTo(Adjustmen::class, 'noadjustmen', 'noadjustmen');
     }
 
     public function barang()

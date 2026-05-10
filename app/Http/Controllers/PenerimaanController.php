@@ -32,7 +32,7 @@ class PenerimaanController extends Controller
     public function create()
     {
         $suppliers = Supplier::all();
-        $barangs = Barang::all();
+        $barangs = Barang::with('stok')->get();
         $nopenerimaan = $this->generateNoPenerimaan();
         return view('penerimaan.create', compact('suppliers', 'barangs', 'nopenerimaan'));
     }
@@ -65,41 +65,46 @@ class PenerimaanController extends Controller
         // For brevity in high-level plan, focusing on core logic
         // In real implementation, validation should be thorough
         
-        DB::transaction(function() use ($request) {
-            $penerimaan = Penerimaan::create([
-                'nopenerimaan' => $this->generateNoPenerimaan(),
-                'tglpenerimaan' => $request->tglpenerimaan,
-                'supplier' => $request->supplier_id,
-                'namasupplier' => Supplier::find($request->supplier_id)->keterangan ?? '-',
-                'totalbarang' => $request->grandtotal, // Total before discount
-                'totaldiskon' => 0,
-                'biayapenerimaan' => 0,
-                'grandtotal' => $request->grandtotal,
-                'pengguna' => 1,
-                'kredit' => max(0, $request->grandtotal - $request->tunai),
-                'tunai' => min($request->tunai, $request->grandtotal),
-                'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenerimaan,
-                'waktu' => now(),
-            ]);
-
-            foreach ($request->items as $index => $item) {
-                Penerimaandetail::create([
-                    'nopenerimaan' => $penerimaan->nopenerimaan,
-                    'kodebarang' => $item['kodebarang'],
-                    'nourut' => $index + 1,
-                    'satuan' => $item['satuan'],
-                    'jumlah' => $item['jumlah'],
-                    'harga' => $item['harga'],
-                    'diskon' => 0,
-                    'hargadiskon' => $item['harga'],
-                    'subtotal' => $item['jumlah'] * $item['harga'],
-                    'tglpenerimaan' => $penerimaan->tglpenerimaan,
-                    'namasatuan' => 'PCS',
-                    'namabarang' => Barang::find($item['kodebarang'])->namabarang,
+        try {
+            DB::transaction(function() use ($request) {
+                $penerimaan = Penerimaan::create([
+                    'nopenerimaan' => $this->generateNoPenerimaan(),
+                    'tglpenerimaan' => $request->tglpenerimaan,
+                    'supplier' => $request->supplier_id,
+                    'namasupplier' => Supplier::find($request->supplier_id)->keterangan ?? '-',
+                    'totalbarang' => $request->grandtotal,
+                    'totaldiskon' => 0,
+                    'biayapenerimaan' => 0,
+                    'grandtotal' => $request->grandtotal,
+                    'pengguna' => 1,
+                    'kredit' => max(0, $request->grandtotal - $request->tunai),
+                    'tunai' => min($request->tunai, $request->grandtotal),
+                    'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenerimaan,
+                    'waktu' => now(),
                 ]);
-            }
-        });
 
-        return redirect()->route('penerimaan.index')->with('success', 'Penerimaan barang berhasil dicatat');
+                foreach ($request->items as $index => $item) {
+                    $barang = Barang::with('satuanRel')->find($item['kodebarang']);
+                    Penerimaandetail::create([
+                        'nopenerimaan' => $penerimaan->nopenerimaan,
+                        'kodebarang' => $item['kodebarang'],
+                        'nourut' => $index + 1,
+                        'satuan' => $barang->satuan,
+                        'jumlah' => $item['jumlah'],
+                        'harga' => $item['harga'],
+                        'diskon' => 0,
+                        'hargadiskon' => $item['harga'],
+                        'subtotal' => $item['jumlah'] * $item['harga'],
+                        'tglpenerimaan' => $penerimaan->tglpenerimaan,
+                        'namasatuan' => $barang->satuanRel->keterangan ?? 'PCS',
+                        'namabarang' => $barang->namabarang,
+                    ]);
+                }
+            });
+
+            return redirect()->route('penerimaan.index')->with('success', 'Penerimaan barang berhasil dicatat');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menyimpan: ' . $e->getMessage()])->withInput();
+        }
     }
 }

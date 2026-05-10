@@ -6,10 +6,10 @@
     <title>Toko Plastik - Premium POS</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     
     <style>
         :root {
@@ -143,10 +143,10 @@
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="mb-5 px-3">
+    <div class="sidebar d-flex flex-column shadow-lg">
+        <div class="p-4 mb-2">
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary p-2 rounded-3 shadow-sm">
+                <div class="bg-primary rounded-3 p-2 shadow-sm">
                     <i class="fas fa-shopping-bag text-white fa-lg"></i>
                 </div>
                 <div>
@@ -156,33 +156,60 @@
             </div>
         </div>
         
-        <nav class="nav flex-column">
-            <a href="{{ route('barang.index') }}" class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}">
-                <i class="fas fa-cube"></i> Master Barang
-            </a>
-            <a href="{{ route('pelanggan.index') }}" class="nav-link {{ request()->routeIs('pelanggan.*') ? 'active' : '' }}">
-                <i class="fas fa-user-group"></i> Pelanggan
-            </a>
-            <a href="{{ route('supplier.index') }}" class="nav-link {{ request()->routeIs('supplier.*') ? 'active' : '' }}">
-                <i class="fas fa-truck-fast"></i> Supplier
-            </a>
-            
-            <div class="mt-4 mb-3 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem">Transaksi</div>
-            <a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->routeIs('penjualan.*') ? 'active' : '' }}">
-                <i class="fas fa-cash-register"></i> Penjualan (POS)
-            </a>
-            <a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->routeIs('penerimaan.*') ? 'active' : '' }}">
-                <i class="fas fa-cart-flatbed"></i> Pembelian
-            </a>
-            
-            <div class="mt-4 mb-3 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem">Analitik</div>
-            <a href="{{ route('report.stock') }}" class="nav-link {{ request()->routeIs('report.stock') ? 'active' : '' }}">
-                <i class="fas fa-chart-pie"></i> Stok Opname
-            </a>
-            <a href="{{ route('report.financial') }}" class="nav-link {{ request()->routeIs('report.financial') ? 'active' : '' }}">
-                <i class="fas fa-wallet"></i> Keuangan
-            </a>
-        </nav>
+        <div class="flex-grow-1 overflow-auto px-3 pb-4">
+            <nav class="nav flex-column">
+                <div class="mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Master Data</div>
+                <a href="{{ route('barang.index') }}" class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}">
+                    <i class="fas fa-cube"></i> Master Barang
+                </a>
+                <a href="{{ route('pelanggan.index') }}" class="nav-link {{ request()->routeIs('pelanggan.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-group"></i> Pelanggan
+                </a>
+                <a href="{{ route('supplier.index') }}" class="nav-link {{ request()->routeIs('supplier.*') ? 'active' : '' }}">
+                    <i class="fas fa-truck-fast"></i> Supplier
+                </a>
+                
+                <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Transaksi</div>
+                <a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->routeIs('penjualan.*') ? 'active' : '' }}">
+                    <i class="fas fa-cash-register"></i> Penjualan (POS)
+                </a>
+                <a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->routeIs('penerimaan.*') ? 'active' : '' }}">
+                    <i class="fas fa-cart-flatbed"></i> Pembelian
+                </a>
+                <a href="{{ route('adjustmen.index') }}" class="nav-link {{ request()->routeIs('adjustmen.*') ? 'active' : '' }}">
+                    <i class="fas fa-sliders"></i> Adjustment Stok
+                </a>
+
+                <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Keuangan</div>
+                <a href="{{ route('tagihan.index') }}" class="nav-link {{ request()->routeIs('tagihan.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar"></i> Penagihan
+                </a>
+                <a href="{{ route('kasmasuk.index') }}" class="nav-link {{ request()->routeIs('kasmasuk.*') ? 'active' : '' }}">
+                    <i class="fas fa-money-bill-trend-up"></i> Pelunasan Piutang
+                </a>
+                <a href="{{ route('kaskeluar.index') }}" class="nav-link {{ request()->routeIs('kaskeluar.*') ? 'active' : '' }}">
+                    <i class="fas fa-money-bill-transfer"></i> Pelunasan Hutang
+                </a>
+                
+                <div class="mt-4 mb-2 px-3 text-uppercase small fw-bold text-slate-500" style="color: #64748b; font-size: 0.7rem; letter-spacing: 1px;">Analitik</div>
+                <a href="{{ route('report.stock') }}" class="nav-link {{ request()->routeIs('report.stock') ? 'active' : '' }}">
+                    <i class="fas fa-chart-pie"></i> Stok Opname
+                </a>
+                <a href="{{ route('report.financial') }}" class="nav-link {{ request()->routeIs('report.financial') ? 'active' : '' }}">
+                    <i class="fas fa-wallet"></i> Laporan Keuangan
+                </a>
+            </nav>
+        </div>
+
+        <div class="mt-auto p-4 border-top border-secondary border-opacity-10 bg-black bg-opacity-25">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem">AD</div>
+                <div>
+                    <div class="text-white small fw-bold">Admin Toko</div>
+                    <div class="text-muted" style="font-size: 0.7rem">Administrator</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
@@ -202,6 +229,9 @@
         @yield('content')
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    @stack('scripts')
 </body>
 </html>

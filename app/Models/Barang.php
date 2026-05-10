@@ -33,4 +33,9 @@ class Barang extends Model
     {
         return $this->belongsTo(Supplier::class, 'supplier', 'supplier');
     }
+
+    public function stok()
+    {
+        return $this->hasOne(Mutasibarang::class, 'kodebarang', 'kodebarang');
+    }
 }

@@ -5,18 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Kaskeluar extends Model
+class Tagihan extends Model
 {
     use HasFactory;
-    protected $table = 'kaskeluar';
-    protected $primaryKey = 'nokaskeluar';
-    protected $keyType = 'string';
+
+    protected $table = 'tagihan';
+    protected $primaryKey = 'notagihan';
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
     protected $guarded = [];
 
-    public function ap()
+    public function details()
     {
-        return $this->belongsTo(Ap::class, 'noref', 'noap');
+        return $this->hasMany(Tagihandetail::class, 'notagihan', 'notagihan');
     }
 }

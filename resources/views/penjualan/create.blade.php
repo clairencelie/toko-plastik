@@ -13,6 +13,16 @@
     </div>
 </div>
 
+@if($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm mb-4">
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <form action="{{ route('penjualan.store') }}" method="POST" id="penjualan-form">
     @csrf
     <div class="row g-4">
@@ -30,7 +40,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold text-muted text-uppercase">Pelanggan</label>
-                            <select name="kodepelanggan" class="form-select select2" required>
+                            <select name="kodepelanggan" class="form-select select2-pelanggan" required>
                                 <option value="">Pilih Pelanggan</option>
                                 @foreach ($pelanggans as $pelanggan)
                                     <option value="{{ $pelanggan->kodepelanggan }}">{{ $pelanggan->namapelanggan }}</option>
@@ -67,16 +77,22 @@
                             <tbody>
                                 <tr class="item-row">
                                     <td class="p-3">
-                                        <select name="items[0][kodebarang]" class="form-select item-select" required>
+                                        <select name="items[0][kodebarang]" class="form-select item-select select2-barang" required>
                                             <option value="">Cari Barang...</option>
                                             @foreach ($barangs as $barang)
-                                                <option value="{{ $barang->kodebarang }}" data-price="{{ $barang->hargajual ?? 0 }}">{{ $barang->namabarang }}</option>
+                                                <option value="{{ $barang->kodebarang }}" 
+                                                    data-price="{{ $barang->hargajual ?? 0 }}"
+                                                    data-stock="{{ $barang->stok->saldoakhir ?? 0 }}">
+                                                    {{ $barang->namabarang }} (Stok: {{ $barang->stok->saldoakhir ?? 0 }})
+                                                </option>
                                             @endforeach
                                         </select>
-                                        <input type="hidden" name="items[0][satuan]" value="1">
                                     </td>
                                     <td>
-                                        <input type="number" name="items[0][jumlah]" class="form-control text-center qty" min="1" step="0.01" required>
+                                        <div class="input-group">
+                                            <input type="number" name="items[0][jumlah]" class="form-control text-center qty" min="0.01" step="0.01" required>
+                                            <span class="input-group-text small bg-light stock-label" title="Stok Tersedia">0</span>
+                                        </div>
                                     </td>
                                     <td>
                                         <input type="number" name="items[0][harga]" class="form-control text-end price" step="0.01" required>
@@ -117,7 +133,7 @@
                             <input type="hidden" name="grandtotal" id="input-grandtotal" value="0">
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('penjualan.index') }}" class="btn btn-outline-light px-4">Batal</a>
-                                <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <button type="submit" class="btn btn-primary btn-lg px-5 shadow" id="submit-btn">
                                     <i class="fas fa-check-circle me-2"></i> SELESAIKAN TRANSAKSI
                                 </button>
                             </div>
@@ -129,82 +145,117 @@
     </div>
 </form>
 
+@push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const itemTable = document.getElementById('item-table').getElementsByTagName('tbody')[0];
-        const addRowBtn = document.getElementById('add-row');
-        const grandTotalEl = document.getElementById('grand-total');
-        const inputGrandTotal = document.getElementById('input-grandtotal');
-        const inputTunai = document.getElementById('input-tunai');
-        const kembaliEl = document.getElementById('kembali');
+    $(document).ready(function() {
+        function initSelect2() {
+            $('.select2-pelanggan').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Pilih Pelanggan'
+            });
+            $('.select2-barang').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Cari Barang...'
+            });
+        }
+
+        initSelect2();
+
+        const itemTable = $('#item-table tbody');
         let rowCount = 1;
 
-        addRowBtn.addEventListener('click', function() {
-            const newRow = itemTable.rows[0].cloneNode(true);
+        $('#add-row').click(function() {
+            const newRow = $('.item-row:first').clone();
             
-            const inputs = newRow.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.name = input.name.replace('[0]', `[${rowCount}]`);
-                input.value = '';
+            // Clean up Select2 artifacts from the clone
+            newRow.find('.select2-container').remove();
+            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden');
+            newRow.find('option').removeAttr('data-select2-id');
+            
+            // Reset values
+            newRow.find('input').val('');
+            newRow.find('.qty').val('');
+            newRow.find('.price').val('');
+            newRow.find('.subtotal-text').text('0');
+            newRow.find('.stock-label').text('0');
+            newRow.find('.remove-row').show();
+
+            newRow.find('input, select').each(function() {
+                const name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/\[\d+\]/, `[${rowCount}]`));
+                }
             });
 
-            newRow.querySelector('.subtotal-text').innerText = '0';
-            newRow.querySelector('.remove-row').style.display = 'block';
+            itemTable.append(newRow);
             
-            itemTable.appendChild(newRow);
+            // Re-init only the new select
+            newRow.find('.select2-barang').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Cari Barang...'
+            });
+            
             rowCount++;
         });
 
-        itemTable.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-row')) {
-                e.target.closest('tr').remove();
-                updateGrandTotal();
-            }
+        $(document).on('click', '.remove-row', function() {
+            $(this).closest('tr').remove();
+            updateGrandTotal();
         });
 
-        document.addEventListener('input', function(e) {
-            if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
-                calculateRow(e.target.closest('tr'));
-            }
-            if (e.target.id === 'input-tunai') {
-                updateKembali();
-            }
+        $(document).on('change', '.select2-barang', function() {
+            const row = $(this).closest('tr');
+            const option = $(this).find(':selected');
+            const price = option.data('price') || 0;
+            const stock = option.data('stock') || 0;
+            
+            row.find('.price').val(price);
+            row.find('.stock-label').text(stock);
+            calculateRow(row);
         });
 
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('item-select')) {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                const price = selectedOption.dataset.price || 0;
-                const row = e.target.closest('tr');
-                row.querySelector('.price').value = price;
-                calculateRow(row);
+        $(document).on('input', '.qty, .price', function() {
+            const row = $(this).closest('tr');
+            const qty = parseFloat(row.find('.qty').val()) || 0;
+            const stock = parseFloat($(row).find('.select2-barang :selected').data('stock')) || 0;
+            
+            if (qty > stock) {
+                alert('Stok tidak mencukupi! Tersedia: ' + stock);
+                row.find('.qty').val(stock);
             }
+            
+            calculateRow(row);
+        });
+
+        $(document).on('input', '#input-tunai', function() {
+            updateKembali();
         });
 
         function calculateRow(row) {
-            const qty = parseFloat(row.querySelector('.qty').value) || 0;
-            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const qty = parseFloat(row.find('.qty').val()) || 0;
+            const price = parseFloat(row.find('.price').val()) || 0;
             const subtotal = qty * price;
-            row.querySelector('.subtotal-text').innerText = subtotal.toLocaleString('id-ID');
+            row.find('.subtotal-text').text(subtotal.toLocaleString('id-ID'));
             updateGrandTotal();
         }
 
         function updateGrandTotal() {
             let total = 0;
-            document.querySelectorAll('.subtotal-text').forEach(el => {
-                total += parseFloat(el.innerText.replace(/\./g, '').replace(',', '.')) || 0;
+            $('.subtotal-text').each(function() {
+                total += parseFloat($(this).text().replace(/\./g, '').replace(',', '.')) || 0;
             });
-            grandTotalEl.innerText = total.toLocaleString('id-ID');
-            inputGrandTotal.value = total;
+            $('#grand-total').text(total.toLocaleString('id-ID'));
+            $('#input-grandtotal').val(total);
             updateKembali();
         }
 
         function updateKembali() {
-            const grandTotal = parseFloat(inputGrandTotal.value) || 0;
-            const tunai = parseFloat(inputTunai.value) || 0;
+            const grandTotal = parseFloat($('#input-grandtotal').val()) || 0;
+            const tunai = parseFloat($('#input-tunai').val()) || 0;
             const kembali = Math.max(0, tunai - grandTotal);
-            kembaliEl.innerText = kembali.toLocaleString('id-ID');
+            $('#kembali').text(kembali.toLocaleString('id-ID'));
         }
     });
 </script>
+@endpush
 @endsection

@@ -5,27 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Ar extends Model
+class Tagihandetail extends Model
 {
     use HasFactory;
-    protected $table = 'ar';
-    protected $primaryKey = 'noar';
-    protected $keyType = 'string';
-    public $incrementing = false;
-    public $timestamps = false;
 
-    public function pelangganRel()
+    protected $table = 'tagihandetail';
+    public $incrementing = false;
+    protected $primaryKey = null;
+    public $timestamps = false;
+    protected $guarded = [];
+
+    public function tagihan()
     {
-        return $this->belongsTo(Pelanggan::class, 'pelanggan', 'kodepelanggan');
+        return $this->belongsTo(Tagihan::class, 'notagihan', 'notagihan');
     }
 
     public function penjualan()
     {
         return $this->belongsTo(Penjualan::class, 'nopenjualan', 'nopenjualan');
-    }
-
-    public function payments()
-    {
-        return $this->hasMany(Kasmasuk::class, 'noar', 'noar');
     }
 }
