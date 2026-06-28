@@ -8,15 +8,33 @@
 
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 10.5pt;
+            font-size: 10pt;
             color: #000;
             background: #fff;
         }
 
-        .page {
-            width: 190mm;
-            padding: 6mm 8mm;
-            margin: 0 auto;
+        /* ── Screen: tampilkan seperti kertas 9.5" x 11" ── */
+        @media screen {
+            body { background: #888; padding: 20px; }
+            .page {
+                width: 221mm;       /* 9.5in - 2×10mm margin */
+                min-height: 259mm;  /* 11in  - 2×5mm  margin */
+                background: #fff;
+                margin: 0 auto;
+                padding: 5mm 0;
+                box-shadow: 0 0 14px rgba(0,0,0,.45);
+            }
+        }
+
+        /* ── Print: kertas 9.5" x 11", margin luar diatur @page ── */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff; }
+            .page { width: 100%; padding: 0; margin: 0; }
+            @page {
+                size: 9.5in 11in;
+                margin: 5mm 10mm;   /* printable area ≈ 221 × 270mm */
+            }
         }
 
         /* ── Header ── */
@@ -25,121 +43,100 @@
             align-items: flex-start;
             margin-bottom: 2mm;
         }
-        .company-info { flex: 1; font-size: 10pt; line-height: 1.5; }
+        .company-info { flex: 1; font-size: 9.5pt; line-height: 1.4; }
         .company-name { font-weight: bold; text-decoration: underline; font-size: 11pt; }
         .faktur-title {
             flex: 1;
             text-align: center;
-            font-size: 13pt;
+            font-size: 12.5pt;
             font-weight: bold;
-            padding-top: 4mm;
+            padding-top: 3mm;
         }
         .header-spacer { flex: 1; }
 
-        hr { border: none; border-top: 1px solid #000; margin: 2mm 0; }
+        hr { border: none; border-top: 1.5px solid #000; margin: 2mm 0; }
 
         /* ── Info block ── */
         .info-section {
             display: flex;
-            margin: 2mm 0 3mm;
-            font-size: 10pt;
-            line-height: 1.6;
+            margin: 2mm 0 2.5mm;
+            font-size: 9.5pt;
+            line-height: 1.5;
         }
         .info-col { flex: 1; }
         .info-row { display: flex; }
-        .info-label { min-width: 110px; }
+        .info-label { min-width: 108px; }
         .info-sep   { width: 8px; }
 
-        /* ── Items table ── */
+        /* ── Tabel item ── */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9.5pt;
+            font-size: 8.5pt;
+            table-layout: auto;
         }
-        thead tr {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-        }
-        tbody tr:last-child { border-bottom: 1px solid #000; }
-        th, td { padding: 1mm 2mm; vertical-align: middle; }
-        th { font-weight: bold; }
-        .col-no      { width: 22px;  text-align: center; }
-        .col-kemasan { width: 90px;  text-align: center; }
-        .col-satuan  { width: 90px;  text-align: center; }
-        .col-harga   { width: 85px;  text-align: right; }
-        .col-diskon  { width: 65px;  text-align: right; }
-        .col-subtot  { width: 90px;  text-align: right; }
 
-        /* ── Summary ── */
+        /* Header tabel diulang otomatis tiap halaman */
+        thead { display: table-header-group; }
+
+        thead tr {
+            border-top: 1.5px solid #000;
+            border-bottom: 1.5px solid #000;
+        }
+        tbody tr:last-child { border-bottom: 1.5px solid #000; }
+
+        /* Cegah row terpotong antar halaman */
+        tbody tr { break-inside: avoid; page-break-inside: avoid; }
+
+        th, td {
+            padding: 0.7mm 1.8mm;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        th { font-weight: bold; }
+
+        /* Kolom nama barang boleh wrap jika sangat panjang */
+        tbody td:nth-child(2) { white-space: normal; }
+
+        .col-no      { width: 22px;  text-align: center; }
+        .col-kemasan { width: 82px;  text-align: center; }
+        .col-satuan  { width: 82px;  text-align: center; }
+        .col-harga   { width: 88px;  text-align: right;  }
+        .col-diskon  { width: 62px;  text-align: right;  }
+        .col-subtot  { width: 92px;  text-align: right;  }
+
+        /* ── Ringkasan ── */
         .summary {
             display: flex;
-            margin-top: 3mm;
-            font-size: 10pt;
-            line-height: 1.7;
+            margin-top: 2.5mm;
+            font-size: 9.5pt;
+            line-height: 1.55;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
         .summary-col { flex: 1; }
         .summary-row { display: flex; }
         .sum-label { min-width: 100px; }
         .sum-sep   { width: 8px; }
-        .sum-val   { text-align: right; min-width: 95px; }
+        .sum-val   { text-align: right; min-width: 92px; }
 
-        /* ── Footer ── */
+        /* ── Tanda tangan ── */
         .footer {
             display: flex;
             justify-content: space-between;
-            margin-top: 10mm;
-            font-size: 10pt;
-            line-height: 1.6;
+            margin-top: 6mm;
+            font-size: 9.5pt;
+            line-height: 1.5;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
-        .footer-right { text-align: right; }
-        .sign-space { margin-top: 14mm; }
-
-        /* ── Print ── */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: #fff; }
-            .page { width: auto; padding: 5mm 8mm; margin: 0; }
-            @page {
-                size: auto;
-                margin: 5mm 0;
-            }
-        }
-
-        /* ── Screen preview ── */
-        @media screen {
-            body { background: #aaa; padding: 20px; }
-            .page { background: #fff; box-shadow: 0 0 12px rgba(0,0,0,.4); }
-        }
+        .sign-space { margin-top: 9mm; }
     </style>
-    <script>
-        // Set page height dynamically so printer only advances as far as the content.
-        // Height must always exceed width (210mm) to stay portrait — if height < width
-        // the browser treats the page as landscape and rotates the content.
-        function setPageHeight() {
-            var content = document.querySelector('.page');
-            var heightPx = content.offsetHeight;
-            var heightMm = Math.ceil(heightPx * 0.2646) + 10; // +10mm margin bawah
-            heightMm = Math.max(heightMm, 211);               // min 211mm → selalu portrait
-            var style = document.getElementById('dynamic-page-size');
-            if (!style) {
-                style = document.createElement('style');
-                style.id = 'dynamic-page-size';
-                document.head.appendChild(style);
-            }
-            style.textContent = '@page { size: 210mm ' + heightMm + 'mm; margin: 5mm 0; }';
-        }
-
-        window.onbeforeprint = setPageHeight;
-        window.onafterprint = function() {
-            var style = document.getElementById('dynamic-page-size');
-            if (style) style.remove();
-        };
-    </script>
 </head>
 <body onload="window.print()">
 
-    <div class="no-print" style="text-align:center; padding:10px; background:#f0f0f0; margin-bottom:10px;">
-        <button onclick="window.print()" style="padding:7px 24px; font-size:13px; cursor:pointer;">
+    <div class="no-print" style="text-align:center; padding:8px; background:#f0f0f0; margin-bottom:14px;">
+        <button onclick="window.print()" style="padding:6px 22px; font-size:13px; cursor:pointer;">
             Cetak Faktur
         </button>
     </div>
@@ -217,13 +214,13 @@
                     <td class="col-barang">{{ $detail->namabarang }}</td>
                     <td class="col-kemasan">
                         @if($detail->namakemasan)
-                            {{ number_format($detail->jumlahkemasan ?? 0, 2, '.', ',') }} {{ $detail->namakemasan }}
+                            {{ rtrim(rtrim(number_format($detail->jumlahkemasan ?? 0, 2, '.', ''), '0'), '.') }} {{ $detail->namakemasan }}
                         @else
                             -
                         @endif
                     </td>
                     <td class="col-satuan">
-                        {{ number_format($detail->jumlah, 2, '.', ',') }} {{ $detail->namasatuan }}
+                        {{ rtrim(rtrim(number_format($detail->jumlah, 2, '.', ''), '0'), '.') }} {{ $detail->namasatuan }}
                     </td>
                     <td class="col-harga">{{ number_format($detail->harga, 2, '.', ',') }}</td>
                     <td class="col-diskon">{{ number_format($detail->diskon ?? 0, 2, '.', ',') }}</td>
@@ -233,7 +230,7 @@
             </tbody>
         </table>
 
-        {{-- ════ SUMMARY ════ --}}
+        {{-- ════ RINGKASAN ════ --}}
         <div class="summary">
             <div class="summary-col">
                 <div class="summary-row">
@@ -266,14 +263,14 @@
             </div>
         </div>
 
-        {{-- ════ FOOTER ════ --}}
+        {{-- ════ TANDA TANGAN ════ --}}
         <div class="footer">
             <div class="footer-left">
                 <div>Yang Menerima,</div>
-                <div>cap dan nama jelas</div>
+                <div style="font-size:8.5pt;">cap dan nama jelas</div>
                 <div class="sign-space">_____________________</div>
             </div>
-            <div class="footer-right">
+            <div style="text-align:right;">
                 <div>Karawang, {{ \Carbon\Carbon::parse($penjualan->tglpenjualan)->format('d F Y') }}</div>
                 <div>Hormat Kami,</div>
                 <div class="sign-space">_____________________</div>

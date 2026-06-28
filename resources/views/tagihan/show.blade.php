@@ -36,7 +36,9 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">PELANGGAN</label>
-                    <div class="fw-bold text-primary">{{ $tagihan->details->first()->nama ?? '-' }}</div>
+                    <div class="fw-bold text-primary">
+                        {{ $tagihan->details->pluck('nama')->unique()->filter()->implode(', ') ?: '-' }}
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">KETERANGAN</label>

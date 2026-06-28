@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('penjualan', \App\Http\Controllers\PenjualanController::class);
         Route::get('/penjualan/{penjualan}/print', [\App\Http\Controllers\PenjualanController::class, 'printInvoice'])->name('penjualan.print');
         // Static routes harus didaftarkan SEBELUM resource agar tidak tertimpa oleh {tagihan}
+        Route::get('/tagihan/ar/batch', [\App\Http\Controllers\TagihanController::class, 'getUnpaidArBatch']);
         Route::get('/tagihan/ar/{customerId}', [\App\Http\Controllers\TagihanController::class, 'getUnpaidAr']);
         Route::get('/tagihan/{tagihan}/print', [\App\Http\Controllers\TagihanController::class, 'print'])->name('tagihan.print');
         Route::resource('tagihan', \App\Http\Controllers\TagihanController::class);

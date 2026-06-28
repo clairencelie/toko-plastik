@@ -40,6 +40,34 @@ class TagihanController extends Controller
         return response()->json($ar);
     }
 
+    public function getUnpaidArBatch(Request $request)
+    {
+        $customerIds = $request->input('customers', []);
+
+        if (empty($customerIds)) {
+            return response()->json([]);
+        }
+
+        $ar = Ar::with('pelangganRel')
+                ->whereIn('pelanggan', array_map('intval', (array) $customerIds))
+                ->where('sisa', '>', 0)
+                ->get()
+                ->map(fn($item) => [
+                    'nopenjualan'   => $item->nopenjualan,
+                    'tglar'         => $item->tglar,
+                    'tgljatuhtempo' => $item->tgljatuhtempo,
+                    'sisa'          => $item->sisa,
+                    'total'         => $item->total,
+                    'tunai'         => $item->tunai,
+                    'kredit'        => $item->kredit,
+                    'bayar'         => $item->bayar,
+                    'namapelanggan' => $item->pelangganRel->namapelanggan ?? '-',
+                    'kodepelanggan' => $item->pelanggan,
+                ]);
+
+        return response()->json($ar);
+    }
+
     public function show($id)
     {
         $tagihan = Tagihan::with('details')->findOrFail($id);
@@ -49,7 +77,9 @@ class TagihanController extends Controller
     public function print($id)
     {
         $tagihan = Tagihan::with('details')->findOrFail($id);
-        return view('tagihan.print', compact('tagihan'));
+        $noPenjualans = $tagihan->details->pluck('nopenjualan');
+        $arMap = Ar::whereIn('nopenjualan', $noPenjualans)->get()->keyBy('nopenjualan');
+        return view('tagihan.print', compact('tagihan', 'arMap'));
     }
 
     public function store(Request $request)
@@ -91,7 +121,7 @@ class TagihanController extends Controller
                         'notagihan' => $tagihan->notagihan,
                         'nopenjualan' => $item['nopenjualan'],
                         'nourut' => $nourut++,
-                        'nama' => $request->namapelanggan ?? '-',
+                        'nama' => $item['namapelanggan'] ?? $request->namapelanggan ?? '-',
                         'total' => $item['total'],
                         'tunai' => $item['tunai'],
                         'kredit' => $item['kredit'],
