@@ -25,7 +25,7 @@ class PenjualanController extends Controller
             });
         }
 
-        $penjualans = $query->orderBy('tglpenjualan', 'desc')->paginate(20);
+        $penjualans = $query->orderBy('tglpenjualan', 'desc')->orderBy('nopenjualan', 'desc')->paginate(20);
         return view('penjualan.index', compact('penjualans'));
     }
 
@@ -68,43 +68,53 @@ class PenjualanController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user()->load('salesman');
+
         try {
-            return DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($request, $user) {
                 $penjualan = Penjualan::create([
                     'nopenjualan' => $this->generateNoPenjualan(),
                     'tglpenjualan' => $request->tglpenjualan,
                     'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenjualan,
                     'pelanggan' => $request->kodepelanggan,
-                    'namapelanggan' => Pelanggan::find($request->kodepelanggan)->namapelanggan ?? '-',
-                    'salesman' => 0, // Default for now
-                    'namasalesman' => 'ADMIN',
+                    'namapelanggan' => Pelanggan::find($request->kodepelanggan)?->namapelanggan ?? '-',
+                    'salesman' => $user->salesman_id ?? 0,
+                    'namasalesman' => $user->salesman?->keterangan ?? strtoupper($user->username),
                     'totalbarang' => $request->grandtotal,
                     'totaldiskon' => 0,
                     'grandtotal' => $request->grandtotal,
-                    'hpptotal' => 0, // Will be updated after details
+                    'hpptotal' => 0,
                     'tunai' => min($request->tunai, $request->grandtotal),
                     'kredit' => max(0, $request->grandtotal - $request->tunai),
-                    'pengguna' => 1,
+                    'pengguna' => $user->id,
                     'shift' => 1,
                     'waktu' => now(),
                 ]);
 
                 foreach ($request->items as $index => $item) {
-                    $barang = Barang::with('satuanRel')->find($item['kodebarang']);
+                    $barang = Barang::with(['satuanRel', 'kemasanRel'])->find($item['kodebarang']);
+                    $jumlahKemasan = ($barang->isisatuan && $barang->isisatuan > 0)
+                        ? round($item['jumlah'] / $barang->isisatuan, 4)
+                        : 0;
+
                     Penjualandetail::create([
                         'nopenjualan' => $penjualan->nopenjualan,
                         'nourut' => $index + 1,
                         'kodebarang' => $item['kodebarang'],
                         'namabarang' => $barang->namabarang,
                         'satuan' => $barang->satuan,
-                        'namasatuan' => $barang->satuanRel->keterangan ?? 'PCS',
+                        'namasatuan' => $barang->satuanRel?->keterangan ?? 'PCS',
                         'jumlah' => $item['jumlah'],
                         'harga' => $item['harga'],
                         'diskon' => 0,
                         'subtotal' => $item['jumlah'] * $item['harga'],
-                        'hppsubtotal' => 0, // DB trigger will calculate this
+                        'hppsubtotal' => 0,
                         'tglpenjualan' => $penjualan->tglpenjualan,
                         'hargadiskon' => $item['harga'],
+                        'kemasan' => $barang->kemasan,
+                        'namakemasan' => $barang->kemasanRel?->keterangan,
+                        'jumlahkemasan' => $jumlahKemasan,
+                        'isisatuan' => $barang->isisatuan,
                     ]);
                 }
 

@@ -10,6 +10,8 @@ class Pelanggan extends Model
     use HasFactory;
     protected $table = 'pelanggan';
     protected $primaryKey = 'kodepelanggan';
+    protected $keyType = 'int';
+    public $incrementing = false;
     public $timestamps = false;
     protected $guarded = [];
 }

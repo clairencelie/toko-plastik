@@ -226,6 +226,9 @@
                     <div class="text-muted" style="font-size: 0.7rem">{{ ucfirst(auth()->user()->role) }}</div>
                 </div>
             </div>
+            <a href="{{ route('password.form') }}" class="btn btn-outline-secondary btn-sm w-100 py-2 border-0 mb-2 text-start" style="background: rgba(255,255,255,0.05); color: #94a3b8;">
+                <i class="fas fa-key me-2"></i> Ganti Password
+            </a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger btn-sm w-100 py-2 border-0" style="background: rgba(239, 68, 68, 0.1);">

@@ -19,6 +19,8 @@ Route::post('logout', [\App\Http\Controllers\Auth\LoginController::class, 'logou
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/password/ganti', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'showForm'])->name('password.form');
+    Route::put('/password/ganti', [\App\Http\Controllers\Auth\ChangePasswordController::class, 'update'])->name('password.update');
 
     // Modul yang bisa diakses Owner & Karyawan
     Route::middleware(['role:owner,karyawan'])->group(function () {
@@ -26,9 +28,10 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('penerimaan', \App\Http\Controllers\PenerimaanController::class);
         Route::resource('penjualan', \App\Http\Controllers\PenjualanController::class);
         Route::get('/penjualan/{penjualan}/print', [\App\Http\Controllers\PenjualanController::class, 'printInvoice'])->name('penjualan.print');
-        Route::resource('tagihan', \App\Http\Controllers\TagihanController::class);
+        // Static routes harus didaftarkan SEBELUM resource agar tidak tertimpa oleh {tagihan}
         Route::get('/tagihan/ar/{customerId}', [\App\Http\Controllers\TagihanController::class, 'getUnpaidAr']);
         Route::get('/tagihan/{tagihan}/print', [\App\Http\Controllers\TagihanController::class, 'print'])->name('tagihan.print');
+        Route::resource('tagihan', \App\Http\Controllers\TagihanController::class);
         Route::get('/report/stock', [\App\Http\Controllers\ReportController::class, 'stockReport'])->name('report.stock');
     });
 
@@ -38,12 +41,12 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('pelanggan', \App\Http\Controllers\PelangganController::class);
         Route::resource('supplier', \App\Http\Controllers\SupplierController::class);
         Route::resource('adjustmen', \App\Http\Controllers\AdjustmenController::class);
-        
-        // Keuangan / Pelunasan
-        Route::resource('kasmasuk', \App\Http\Controllers\KasmasukController::class);
+
+        // Keuangan / Pelunasan — static routes didaftarkan SEBELUM resource
         Route::get('/kasmasuk/ar/{customerId}', [\App\Http\Controllers\KasmasukController::class, 'getUnpaidAr']);
-        Route::resource('kaskeluar', \App\Http\Controllers\KaskeluarController::class);
+        Route::resource('kasmasuk', \App\Http\Controllers\KasmasukController::class);
         Route::get('/kaskeluar/ap/{supplierId}', [\App\Http\Controllers\KaskeluarController::class, 'getUnpaidAp']);
+        Route::resource('kaskeluar', \App\Http\Controllers\KaskeluarController::class);
         
         Route::get('/report/financial', [\App\Http\Controllers\ReportController::class, 'financialReport'])->name('report.financial');
     });

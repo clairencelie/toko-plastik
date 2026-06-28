@@ -25,7 +25,7 @@ class PenerimaanController extends Controller
             });
         }
 
-        $penerimaans = $query->orderBy('tglpenerimaan', 'desc')->paginate(20);
+        $penerimaans = $query->orderBy('tglpenerimaan', 'desc')->orderBy('nopenerimaan', 'desc')->paginate(20);
         return view('penerimaan.index', compact('penerimaans'));
     }
 
@@ -71,12 +71,12 @@ class PenerimaanController extends Controller
                     'nopenerimaan' => $this->generateNoPenerimaan(),
                     'tglpenerimaan' => $request->tglpenerimaan,
                     'supplier' => $request->supplier_id,
-                    'namasupplier' => Supplier::find($request->supplier_id)->keterangan ?? '-',
+                    'namasupplier' => Supplier::find($request->supplier_id)?->keterangan ?? '-',
                     'totalbarang' => $request->grandtotal,
                     'totaldiskon' => 0,
                     'biayapenerimaan' => 0,
                     'grandtotal' => $request->grandtotal,
-                    'pengguna' => 1,
+                    'pengguna' => auth()->id(),
                     'kredit' => max(0, $request->grandtotal - $request->tunai),
                     'tunai' => min($request->tunai, $request->grandtotal),
                     'tgljatuhtempo' => $request->tgljatuhtempo ?: $request->tglpenerimaan,

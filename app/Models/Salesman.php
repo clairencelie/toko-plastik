@@ -11,6 +11,8 @@ class Salesman extends Model
 
     protected $table = 'salesman';
     protected $primaryKey = 'salesman';
+    protected $keyType = 'int';
+    public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [

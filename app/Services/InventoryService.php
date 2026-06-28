@@ -60,10 +60,10 @@ class InventoryService
     public function reduceStock($noTransaksi, $kodeBarang, $noUrutTrans, $jumlahRequested, $waktuTrans = null)
     {
         $waktuTrans = $waktuTrans ?: now();
-        $totalHPP = 0;
         $remainingToReduce = $jumlahRequested;
 
-        return DB::transaction(function () use ($noTransaksi, $kodeBarang, $noUrutTrans, $remainingToReduce, $waktuTrans, &$totalHPP) {
+        return DB::transaction(function () use ($noTransaksi, $kodeBarang, $noUrutTrans, $jumlahRequested, $remainingToReduce, $waktuTrans) {
+            $totalHPP = 0;
             // Check total available stock
             $availableStock = Fifostock::where('kodebarang', $kodeBarang)->sum('saldo');
             if ($availableStock < $remainingToReduce) {
