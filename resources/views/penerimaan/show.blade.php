@@ -14,18 +14,18 @@
     <div class="d-flex gap-2">
         @if(auth()->user()->username === 'hdy')
         <a href="{{ route('penerimaan.edit', $penerimaan->nopenerimaan) }}" class="btn btn-warning shadow-sm">
-            <i class="fas fa-edit me-2"></i> Edit
+            Edit
         </a>
         <form action="{{ route('penerimaan.destroy', $penerimaan->nopenerimaan) }}" method="POST" id="delete-form">
             @csrf
             @method('DELETE')
             <button type="button" class="btn btn-danger shadow-sm" onclick="confirmDelete()">
-                <i class="fas fa-trash me-2"></i> Hapus
+                Hapus
             </button>
         </form>
         @endif
         <a href="{{ route('penerimaan.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i> Kembali
+            Kembali
         </a>
     </div>
 </div>

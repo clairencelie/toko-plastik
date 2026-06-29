@@ -67,13 +67,13 @@
                         <td class="text-end text-danger">Rp {{ number_format($penerimaan->kredit, 0, ',', '.') }}</td>
                         <td class="text-center pe-4">
                             <div class="d-flex justify-content-center gap-1">
-                                <a href="{{ route('penerimaan.show', $penerimaan->nopenerimaan) }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('penerimaan.show', $penerimaan->nopenerimaan) }}" class="btn btn-sm btn-primary">Lihat</a>
                                 @if(auth()->user()->username === 'hdy')
-                                <a href="{{ route('penerimaan.edit', $penerimaan->nopenerimaan) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                <a href="{{ route('penerimaan.edit', $penerimaan->nopenerimaan) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ route('penerimaan.destroy', $penerimaan->nopenerimaan) }}" method="POST" class="d-inline delete-form">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Hapus" data-no="{{ $penerimaan->nopenerimaan }}"><i class="fas fa-trash"></i></button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" data-no="{{ $penerimaan->nopenerimaan }}">Hapus</button>
                                 </form>
                                 @endif
                             </div>

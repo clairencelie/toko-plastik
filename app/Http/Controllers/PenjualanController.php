@@ -6,6 +6,7 @@ use App\Models\Penjualan;
 use App\Models\Penjualandetail;
 use App\Models\Barang;
 use App\Models\Pelanggan;
+use App\Models\Ar;
 use App\Services\InventoryService;
 use App\Services\FinanceService;
 use Illuminate\Http\Request;
@@ -64,6 +65,119 @@ class PenjualanController extends Controller
         $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
 
         return $prefix . $newNumber;
+    }
+
+    public function edit($id)
+    {
+        if (auth()->user()->username !== 'hdy') {
+            abort(403);
+        }
+        $penjualan = Penjualan::with(['details.barang.satuanRel'])->findOrFail($id);
+        $pelanggans = Pelanggan::all();
+        $barangs = Barang::with('stok')->get();
+        return view('penjualan.edit', compact('penjualan', 'pelanggans', 'barangs'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (auth()->user()->username !== 'hdy') {
+            abort(403);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $penjualan = Penjualan::findOrFail($id);
+
+                $grandtotal = $request->grandtotal;
+                $tunai = min($request->tunai, $grandtotal);
+                $kredit = max(0, $grandtotal - $tunai);
+
+                $penjualan->tglpenjualan = $request->tglpenjualan;
+                $penjualan->tgljatuhtempo = $request->tgljatuhtempo ?: $request->tglpenjualan;
+                $penjualan->pelanggan = $request->kodepelanggan;
+                $penjualan->namapelanggan = Pelanggan::find($request->kodepelanggan)?->namapelanggan ?? '-';
+                $penjualan->totalbarang = $grandtotal;
+                $penjualan->grandtotal = $grandtotal;
+                $penjualan->tunai = $tunai;
+                $penjualan->kredit = $kredit;
+                $penjualan->save();
+
+                // Delete old details; DB triggers akan mengembalikan stok otomatis
+                Penjualandetail::where('nopenjualan', $penjualan->nopenjualan)->delete();
+
+                // Insert new details; DB triggers akan mengurangi stok otomatis
+                foreach ($request->items as $index => $item) {
+                    $barang = Barang::with(['satuanRel', 'kemasanRel'])->find($item['kodebarang']);
+                    $jumlahKemasan = ($barang->isisatuan && $barang->isisatuan > 0)
+                        ? round($item['jumlah'] / $barang->isisatuan, 4)
+                        : 0;
+
+                    Penjualandetail::create([
+                        'nopenjualan' => $penjualan->nopenjualan,
+                        'nourut' => $index + 1,
+                        'kodebarang' => $item['kodebarang'],
+                        'namabarang' => $barang->namabarang,
+                        'satuan' => $barang->satuan,
+                        'namasatuan' => $barang->satuanRel?->keterangan ?? 'PCS',
+                        'jumlah' => $item['jumlah'],
+                        'harga' => $item['harga'],
+                        'diskon' => 0,
+                        'subtotal' => $item['jumlah'] * $item['harga'],
+                        'hppsubtotal' => 0,
+                        'tglpenjualan' => $penjualan->tglpenjualan,
+                        'hargadiskon' => $item['harga'],
+                        'kemasan' => $barang->kemasan,
+                        'namakemasan' => $barang->kemasanRel?->keterangan,
+                        'jumlahkemasan' => $jumlahKemasan,
+                        'isisatuan' => $barang->isisatuan,
+                    ]);
+                }
+
+                // Update AR jika ada dan belum ada penerimaan pembayaran
+                $ar = Ar::where('nopenjualan', $penjualan->nopenjualan)->first();
+                if ($ar && $ar->bayar == 0) {
+                    $ar->total = $grandtotal;
+                    $ar->tunai = $tunai;
+                    $ar->kredit = $kredit;
+                    $ar->sisa = $kredit;
+                    $ar->tgljatuhtempo = $request->tgljatuhtempo ?: $request->tglpenjualan;
+                    $ar->save();
+                }
+            });
+
+            return redirect()->route('penjualan.show', $id)->with('success', 'Penjualan berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memperbarui: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    public function destroy($id)
+    {
+        if (auth()->user()->username !== 'hdy') {
+            abort(403);
+        }
+
+        try {
+            $penjualan = Penjualan::findOrFail($id);
+
+            $ar = Ar::where('nopenjualan', $penjualan->nopenjualan)->first();
+            if ($ar && $ar->bayar > 0) {
+                return back()->withErrors(['error' => 'Tidak bisa menghapus penjualan yang sudah ada penerimaan pembayaran piutangnya (Rp ' . number_format($ar->bayar, 0, ',', '.') . ').']);
+            }
+
+            DB::transaction(function () use ($penjualan, $ar) {
+                if ($ar) {
+                    $ar->delete();
+                }
+                // DB triggers akan mengembalikan stok otomatis saat detail dihapus
+                Penjualandetail::where('nopenjualan', $penjualan->nopenjualan)->delete();
+                $penjualan->delete();
+            });
+
+            return redirect()->route('penjualan.index')->with('success', 'Penjualan ' . $penjualan->nopenjualan . ' berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus: ' . $e->getMessage()]);
+        }
     }
 
     public function store(Request $request)
