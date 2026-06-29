@@ -11,10 +11,33 @@
             </ol>
         </nav>
     </div>
-    <a href="{{ route('penerimaan.index') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left me-2"></i> Kembali
-    </a>
+    <div class="d-flex gap-2">
+        @if(auth()->user()->username === 'hdy')
+        <a href="{{ route('penerimaan.edit', $penerimaan->nopenerimaan) }}" class="btn btn-warning shadow-sm">
+            <i class="fas fa-edit me-2"></i> Edit
+        </a>
+        <form action="{{ route('penerimaan.destroy', $penerimaan->nopenerimaan) }}" method="POST" id="delete-form">
+            @csrf
+            @method('DELETE')
+            <button type="button" class="btn btn-danger shadow-sm" onclick="confirmDelete()">
+                <i class="fas fa-trash me-2"></i> Hapus
+            </button>
+        </form>
+        @endif
+        <a href="{{ route('penerimaan.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Kembali
+        </a>
+    </div>
 </div>
+
+@if(session('success'))
+    <div class="alert alert-success border-0 shadow-sm mb-4">{{ session('success') }}</div>
+@endif
+@if($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm mb-4">
+        <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+    </div>
+@endif
 
 <div class="row g-4">
     <div class="col-lg-4">
@@ -95,4 +118,13 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+    function confirmDelete() {
+        if (confirm('Yakin ingin menghapus penerimaan {{ $penerimaan->nopenerimaan }}? Stok barang akan dikembalikan.')) {
+            document.getElementById('delete-form').submit();
+        }
+    }
+</script>
+@endpush
 @endsection
