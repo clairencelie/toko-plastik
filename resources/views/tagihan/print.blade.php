@@ -13,11 +13,17 @@
             background: #fff;
         }
 
-        .page {
-            width: 210mm;
-            min-height: 270mm;
-            margin: 0 auto;
-            padding: 14mm 14mm 24mm;
+        /* ── Screen: tampilkan seperti kertas 9.5" x 5.5" (1 set, kertas terbagi 2) ── */
+        @media screen {
+            body { background: #888; }
+            .page {
+                width: 221mm;       /* 9.5in - 2×10mm margin */
+                min-height: 130mm;  /* 5.5in - 2×5mm  margin */
+                background: #fff;
+                margin: 20px auto;
+                padding: 14mm 14mm 24mm;
+                box-shadow: 0 0 14px rgba(0,0,0,.45);
+            }
         }
 
         /* ── Header ── */
@@ -104,10 +110,15 @@
             text-align: center;
         }
 
+        /* ── Print: kertas 9.5" x 5.5" (1 set), margin luar diatur @page ── */
         @media print {
             .no-print { display: none !important; }
-            .page { padding: 10mm 12mm 20mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page { width: 100%; min-height: 0; margin: 0; padding: 10mm 12mm 20mm; }
+            @page {
+                size: 9.5in 5.5in;
+                margin: 5mm 10mm;   /* printable area ≈ 221 × 130mm */
+            }
         }
     </style>
 </head>
@@ -198,7 +209,7 @@
             <p>Yang Menagih,</p>
             <div class="sign-space"></div>
             <div class="sign-line"></div>
-            <p style="margin-top:4px; font-weight:bold;">{{ auth()->user()->name }}</p>
+            <p style="margin-top:4px; font-weight:bold;">{{ $tagihan->namasalesman ?? auth()->user()->name }}</p>
         </div>
     </div>
 

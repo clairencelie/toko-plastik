@@ -2,11 +2,11 @@
 
 @section('content')
 <div class="mb-4">
-    <h2 class="fw-bold mb-0">Buat Tagihan Baru</h2>
+    <h2 class="fw-bold mb-0">Edit Tagihan</h2>
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a href="{{ route('tagihan.index') }}">Tagihan</a></li>
-            <li class="breadcrumb-item active">Baru</li>
+            <li class="breadcrumb-item active">{{ $tagihan->notagihan }}</li>
         </ol>
     </nav>
 </div>
@@ -21,8 +21,9 @@
     </div>
 @endif
 
-<form action="{{ route('tagihan.store') }}" method="POST" id="tagihanForm">
+<form action="{{ route('tagihan.update', $tagihan->notagihan) }}" method="POST" id="tagihanForm">
     @csrf
+    @method('PUT')
     <div class="row g-4">
         {{-- ============================================================ --}}
         {{-- PANEL KIRI                                                    --}}
@@ -35,30 +36,30 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">NOMOR TAGIHAN</label>
                         <input type="text" class="form-control bg-light fw-bold text-primary"
-                               value="{{ $notagihan }}" readonly>
+                               value="{{ $tagihan->notagihan }}" readonly>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold">TANGGAL</label>
                         <input type="date" name="tgltagihan" class="form-control"
-                               value="{{ date('Y-m-d') }}" required>
+                               value="{{ \Carbon\Carbon::parse($tagihan->tgltagihan)->format('Y-m-d') }}" required>
                     </div>
 
-                    @if(auth()->user()->username === 'hdy')
                     <div class="mb-3">
                         <label class="form-label small fw-bold">SALESMAN</label>
                         <select name="salesman" class="form-select">
                             <option value="">-- Tidak ditentukan --</option>
                             @foreach($salesmen as $s)
-                                <option value="{{ $s->salesman }}">{{ $s->keterangan }}</option>
+                                <option value="{{ $s->salesman }}" {{ $tagihan->salesman == $s->salesman ? 'selected' : '' }}>
+                                    {{ $s->keterangan }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
-                    @endif
 
                     {{-- Dropdown pilih pelanggan (single, digunakan berulang) --}}
                     <div class="mb-2">
-                        <label class="form-label small fw-bold">PILIH PELANGGAN</label>
+                        <label class="form-label small fw-bold">TAMBAH PELANGGAN LAIN</label>
                         <select id="kodepelanggan" class="form-select select2-pelanggan">
                             <option value="">-- Pilih Pelanggan --</option>
                             @foreach($pelanggans as $p)
@@ -70,18 +71,14 @@
                         </div>
                     </div>
 
-                    {{-- Tombol ini muncul setelah pelanggan pertama dimuat --}}
-                    <div class="mb-4 d-none" id="btnPilihLainWrap">
-                        <button type="button" id="btnPilihLain"
-                                class="btn btn-outline-secondary btn-sm w-100">
-                            <i class="fas fa-plus me-1"></i> Pilih Pelanggan Lain
-                        </button>
+                    <div class="mb-4">
+                        <small class="text-muted">Hilangkan centang untuk mengeluarkan transaksi dari tagihan ini.</small>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold">KETERANGAN</label>
                         <textarea name="keterangan" class="form-control" rows="3"
-                                  placeholder="Catatan tambahan..."></textarea>
+                                  placeholder="Catatan tambahan...">{{ $tagihan->keterangan }}</textarea>
                     </div>
                 </div>
             </div>
@@ -95,7 +92,7 @@
 
             <div class="mt-4 d-grid">
                 <button type="submit" class="btn btn-primary py-3 fw-bold shadow-sm">
-                    SIMPAN &amp; TERBITKAN TAGIHAN
+                    SIMPAN PERUBAHAN
                 </button>
             </div>
         </div>
@@ -108,12 +105,12 @@
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Daftar Piutang (Kredit)</h5>
 
-                    <div id="arPlaceholder" class="text-center py-5 text-muted">
+                    <div id="arPlaceholder" class="text-center py-5 text-muted d-none">
                         <i class="fas fa-user-clock fa-3x opacity-25 mb-3 d-block"></i>
                         <p class="mb-0">Pilih pelanggan untuk melihat daftar piutang</p>
                     </div>
 
-                    <div class="table-responsive d-none" id="arTableContainer">
+                    <div class="table-responsive" id="arTableContainer">
                         <table class="table table-hover align-middle mb-0" id="arTable">
                             <thead>
                                 <tr class="border-bottom">
@@ -129,7 +126,36 @@
                                 </tr>
                             </thead>
                             <tbody id="arTableBody">
-                                {{-- Rows diisi via JS, dikelompokkan per pelanggan --}}
+                                @foreach($existingGroups as $group)
+                                <tr class="table-secondary customer-group-header" data-customer-id="{{ $group['customerId'] }}">
+                                    <td colspan="6" class="py-2 ps-3 fw-bold small">
+                                        <i class="fas fa-user me-1 text-primary"></i>{{ $group['customerName'] }}
+                                    </td>
+                                </tr>
+                                @foreach($group['rows'] as $row)
+                                <tr class="ar-row" data-customer-id="{{ $group['customerId'] }}">
+                                    <td>
+                                        <input type="checkbox"
+                                               name="items[{{ $group['customerId'] }}-{{ $loop->index }}][selected]"
+                                               value="1" checked
+                                               class="form-check-input row-checkbox">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][nopenjualan]"  value="{{ $row['nopenjualan'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][namapelanggan]" value="{{ $group['customerName'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][total]"         value="{{ $row['total'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][tunai]"         value="{{ $row['tunai'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][kredit]"        value="{{ $row['kredit'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][bayar]"         value="{{ $row['bayar'] }}">
+                                        <input type="hidden" name="items[{{ $group['customerId'] }}-{{ $loop->index }}][sisabayar]"     value="{{ $row['sisabayar'] }}"
+                                               class="item-sisa">
+                                    </td>
+                                    <td><span class="badge bg-white text-dark border">{{ $group['customerName'] }}</span></td>
+                                    <td><span class="fw-bold">{{ $row['nopenjualan'] }}</span></td>
+                                    <td class="small text-muted">{{ $row['tglar'] ?? '-' }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ $row['tgljatuhtempo'] ?? '-' }}</span></td>
+                                    <td class="text-end fw-bold">Rp {{ number_format($row['sisabayar'], 0, ',', '.') }}</td>
+                                </tr>
+                                @endforeach
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -144,8 +170,13 @@
 <script>
 $(document).ready(function () {
     // ─── state ────────────────────────────────────────────────────────────
-    let itemIndex      = 0;           // global counter untuk name="items[n][...]"
+    let itemIndex      = 0;           // global counter untuk name="items[n][...]" tambahan baru
     let loadedCustomers = {};         // { customerId: true }  — sudah dimuat
+
+    // Tandai pelanggan yang barisnya sudah pra-terisi dari tagihan yang sedang diedit
+    @foreach($existingGroups as $group)
+        loadedCustomers["{{ $group['customerId'] }}"] = true;
+    @endforeach
 
     // ─── Select2 ──────────────────────────────────────────────────────────
     $('.select2-pelanggan').select2({
@@ -162,20 +193,17 @@ $(document).ready(function () {
 
         // Cegah load ganda untuk pelanggan yang sama
         if (loadedCustomers[customerId]) {
-            alert(`Piutang "${customerName}" sudah ditambahkan ke tabel.`);
-            // Reset dropdown tanpa memicu event change lagi
+            alert(`Piutang "${customerName}" sudah ada di tabel.`);
             $(this).val(null).trigger('change.select2');
             return;
         }
 
-        // Tandai loading
         $('#loadingAr').removeClass('d-none');
         $('#kodepelanggan').prop('disabled', true);
 
         $.get('/tagihan/ar/' + customerId, function (data) {
             loadedCustomers[customerId] = true;
 
-            // Baris header grup pelanggan — pakai data-customer-id agar bisa di-cleanup
             const groupHeaderHtml = `
                 <tr class="table-secondary customer-group-header" data-customer-id="${customerId}">
                     <td colspan="6" class="py-2 ps-3 fw-bold small">
@@ -194,7 +222,7 @@ $(document).ready(function () {
                 </tr>`;
             } else {
                 data.forEach(function (item) {
-                    const idx = itemIndex++;
+                    const idx = 'new-' + (itemIndex++);
                     rowsHtml += `
                     <tr class="ar-row" data-customer-id="${customerId}">
                         <td>
@@ -224,17 +252,11 @@ $(document).ready(function () {
                 });
             }
 
-            // Tampilkan tabel (kalau belum)
-            if ($('#arTableContainer').hasClass('d-none')) {
-                $('#arPlaceholder').addClass('d-none');
-                $('#arTableContainer').removeClass('d-none');
-            }
+            $('#arPlaceholder').addClass('d-none');
+            $('#arTableContainer').removeClass('d-none');
 
             $('#arTableBody').append(rowsHtml);
             updateGrandTotal();
-
-            // Tampilkan tombol "Pilih Pelanggan Lain"
-            $('#btnPilihLainWrap').removeClass('d-none');
 
         }).fail(function () {
             delete loadedCustomers[customerId];
@@ -243,37 +265,6 @@ $(document).ready(function () {
             $('#loadingAr').addClass('d-none');
             $('#kodepelanggan').prop('disabled', false);
         });
-    });
-
-    // ─── Tombol "Pilih Pelanggan Lain" ────────────────────────────────────
-    $('#btnPilihLain').on('click', function () {
-        // Hapus semua baris yang TIDAK dicentang dari tabel
-        $('.ar-row').each(function () {
-            const cb = $(this).find('.row-checkbox');
-            // Baris tanpa checkbox (misal "tidak ada piutang") langsung hapus juga
-            if (cb.length === 0 || !cb.prop('checked')) {
-                const cid = $(this).data('customer-id');
-                $(this).remove();
-                // Kalau tidak ada lagi baris untuk pelanggan ini → hapus header grupnya
-                // dan bebaskan slot agar bisa dipilih ulang
-                if ($(`.ar-row[data-customer-id="${cid}"]`).length === 0) {
-                    $(`.customer-group-header[data-customer-id="${cid}"]`).remove();
-                    delete loadedCustomers[cid];
-                }
-            }
-        });
-
-        // Kalau tabel kosong setelah cleanup → tampilkan placeholder
-        if ($('#arTableBody').children().length === 0) {
-            $('#arTableContainer').addClass('d-none');
-            $('#arPlaceholder').removeClass('d-none');
-        }
-
-        updateGrandTotal();
-
-        // Reset dropdown → user pilih pelanggan berikutnya
-        $('#kodepelanggan').val(null).trigger('change.select2');
-        $('#btnPilihLainWrap').addClass('d-none');
     });
 
     // ─── Checkbox selectAll ───────────────────────────────────────────────
@@ -293,7 +284,15 @@ $(document).ready(function () {
             total += parseFloat($(this).closest('td').find('.item-sisa').val()) || 0;
         });
         $('#grandTotalText').text('Rp ' + new Intl.NumberFormat('id-ID').format(total));
+
+        if ($('#arTableBody').children().length === 0) {
+            $('#arTableContainer').addClass('d-none');
+            $('#arPlaceholder').removeClass('d-none');
+        }
     }
+
+    // Hitung total awal dari baris yang sudah pra-dicentang
+    updateGrandTotal();
 });
 </script>
 @endpush

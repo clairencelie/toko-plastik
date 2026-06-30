@@ -13,11 +13,23 @@
     </div>
     <div class="btn-group shadow-sm">
         <a href="{{ route('tagihan.index') }}" class="btn btn-light border">
-            <i class="fas fa-arrow-left me-2"></i> Kembali
+            Kembali
         </a>
         <a href="{{ route('tagihan.print', $tagihan->notagihan) }}" target="_blank" class="btn btn-primary">
-            <i class="fas fa-print me-2"></i> Cetak Tagihan
+            Cetak Tagihan
         </a>
+        @if(auth()->user()->username === 'hdy')
+        <a href="{{ route('tagihan.edit', $tagihan->notagihan) }}" class="btn btn-warning">
+            Edit
+        </a>
+        <form action="{{ route('tagihan.destroy', $tagihan->notagihan) }}" method="POST" class="d-inline delete-form" id="deleteForm">
+            @csrf
+            @method('DELETE')
+            <button type="button" class="btn btn-danger btn-delete" data-no="{{ $tagihan->notagihan }}">
+                Hapus
+            </button>
+        </form>
+        @endif
     </div>
 </div>
 
@@ -80,8 +92,8 @@
                                 <td class="text-end">Rp {{ number_format($detail->sudahbayar, 0, ',', '.') }}</td>
                                 <td class="text-end fw-bold text-primary">Rp {{ number_format($detail->sisabayar, 0, ',', '.') }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('penjualan.show', $detail->nopenjualan) }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail Penjualan">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{{ route('penjualan.show', $detail->nopenjualan) }}" class="btn btn-sm btn-outline-primary">
+                                        Lihat
                                     </a>
                                 </td>
                             </tr>
@@ -99,4 +111,15 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    $(document).on('click', '.btn-delete', function() {
+        const no = $(this).data('no');
+        if (confirm('Yakin ingin menghapus tagihan ' + no + '?')) {
+            $(this).closest('.delete-form').submit();
+        }
+    });
+</script>
+@endpush
 @endsection

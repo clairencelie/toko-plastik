@@ -8,71 +8,76 @@
 
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 10pt;
+            font-size: 11pt;
             color: #000;
             background: #fff;
         }
 
-        /* ── Screen: tampilkan seperti kertas 9.5" x 11" ── */
+        /* ── Screen: tampilkan seperti kertas 9.5" x 5.5" (1 set, kertas terbagi 2) ── */
         @media screen {
             body { background: #888; padding: 20px; }
             .page {
                 width: 221mm;       /* 9.5in - 2×10mm margin */
-                min-height: 259mm;  /* 11in  - 2×5mm  margin */
+                min-height: 134mm;  /* 5.5in - 2×3mm  margin */
                 background: #fff;
                 margin: 0 auto;
-                padding: 5mm 0;
+                padding: 3mm 0;
                 box-shadow: 0 0 14px rgba(0,0,0,.45);
             }
         }
 
-        /* ── Print: kertas 9.5" x 11", margin luar diatur @page ── */
+        /* ── Print: kertas 9.5" x 5.5" (1 set), margin luar diatur @page ── */
         @media print {
             .no-print { display: none !important; }
             body { background: #fff; }
             .page { width: 100%; padding: 0; margin: 0; }
             @page {
-                size: 9.5in 11in;
-                margin: 5mm 10mm;   /* printable area ≈ 221 × 270mm */
+                size: 9.5in 5.5in;
+                margin: 3mm 10mm;   /* printable area ≈ 221 × 134mm */
             }
+            /* Tiap set lanjutan (>11 item) selalu mulai di lembar baru */
+            .page-break { page-break-before: always; break-before: page; }
+        }
+        @media screen {
+            .page + .page { margin-top: 20px; }
         }
 
         /* ── Header ── */
         .header {
             display: flex;
             align-items: flex-start;
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
         }
-        .company-info { flex: 1; font-size: 9.5pt; line-height: 1.4; }
-        .company-name { font-weight: bold; text-decoration: underline; font-size: 11pt; }
+        .company-info { flex: 1; font-size: 10.5pt; line-height: 1.4; }
+        .company-name { font-weight: bold; text-decoration: underline; font-size: 12pt; }
         .faktur-title {
             flex: 1;
             text-align: center;
-            font-size: 12.5pt;
+            font-size: 13.5pt;
             font-weight: bold;
             padding-top: 3mm;
         }
         .header-spacer { flex: 1; }
 
-        hr { border: none; border-top: 1.5px solid #000; margin: 2mm 0; }
+        hr { border: none; border-top: 1.5px solid #000; margin: 1.5mm 0; }
 
         /* ── Info block ── */
         .info-section {
             display: flex;
-            margin: 2mm 0 2.5mm;
-            font-size: 9.5pt;
-            line-height: 1.5;
+            margin: 1.5mm 0 1.5mm;
+            font-size: 10.5pt;
+            line-height: 1.35;
         }
         .info-col { flex: 1; }
         .info-row { display: flex; }
-        .info-label { min-width: 108px; }
+        .info-label { min-width: 16ch; flex-shrink: 0; white-space: nowrap; }
         .info-sep   { width: 8px; }
 
         /* ── Tabel item ── */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8.5pt;
+            font-size: 9.5pt;
             table-layout: auto;
         }
 
@@ -105,18 +110,23 @@
         .col-diskon  { width: 62px;  text-align: right;  }
         .col-subtot  { width: 92px;  text-align: right;  }
 
-        /* ── Ringkasan ── */
+        /* ── Ringkasan + Tanda tangan: selalu nempel jadi 1 blok ── */
+        .closing-block { break-inside: avoid; page-break-inside: avoid; }
+
         .summary {
             display: flex;
             margin-top: 2.5mm;
-            font-size: 9.5pt;
+            font-size: 10.5pt;
             line-height: 1.55;
-            break-inside: avoid;
-            page-break-inside: avoid;
         }
         .summary-col { flex: 1; }
         .summary-row { display: flex; }
-        .sum-label { min-width: 100px; }
+        .sum-label { flex-shrink: 0; white-space: nowrap; }
+        /* Kolom kiri (Total Barang/Diskon/Grand Total) vs kanan (Tunai/Kredit)
+           masing-masing dilebarkan pas label terpanjangnya sendiri biar titik
+           dua nempel rapi, ga ada jarak kosong berlebih */
+        .summary-col:first-child .sum-label { min-width: 13ch; }
+        .summary-col:last-child  .sum-label { min-width: 7ch; }
         .sum-sep   { width: 8px; }
         .sum-val   { text-align: right; min-width: 92px; }
 
@@ -125,12 +135,25 @@
             display: flex;
             justify-content: space-between;
             margin-top: 6mm;
-            font-size: 9.5pt;
+            font-size: 10.5pt;
             line-height: 1.5;
-            break-inside: avoid;
-            page-break-inside: avoid;
         }
         .sign-space { margin-top: 9mm; }
+
+        /* ── Kepadatan adaptif: makin banyak item di 1 lembar, makin mepet
+             spacing-nya (termasuk font tabel) supaya tetap muat di kertas
+             5.5", tapi kalau item sedikit (lembar masih longgar) spacing
+             tetap normal di atas ── */
+        .density-normal th, .density-normal td { padding: 0.5mm 1.8mm; }
+        .density-normal .summary    { margin-top: 1mm; }
+        .density-normal .footer     { margin-top: 2mm; }
+        .density-normal .sign-space { margin-top: 3mm; }
+
+        .density-compact table { font-size: 9pt; }
+        .density-compact th, .density-compact td { padding: 0.35mm 1.8mm; }
+        .density-compact .summary    { margin-top: 0.3mm; }
+        .density-compact .footer     { margin-top: 0.5mm; }
+        .density-compact .sign-space { margin-top: 1.5mm; }
     </style>
 </head>
 <body onload="window.print()">
@@ -141,8 +164,15 @@
         </button>
     </div>
 
-    <div class="page">
+    @php $detailChunks = $penjualan->details->chunk(11); $rowNum = 0; @endphp
+    @foreach($detailChunks as $pageIndex => $items)
+    @php
+        $itemCount = $items->count();
+        $density = $itemCount >= 8 ? 'density-compact' : ($itemCount >= 5 ? 'density-normal' : '');
+    @endphp
+    <div class="page{{ $pageIndex > 0 ? ' page-break' : '' }}{{ $density ? ' '.$density : '' }}">
 
+        @if($pageIndex === 0)
         {{-- ════ HEADER ════ --}}
         <div class="header">
             <div class="company-info">
@@ -193,6 +223,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- ════ ITEMS ════ --}}
         <table>
@@ -208,9 +239,10 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($penjualan->details as $i => $detail)
+                @foreach($items as $detail)
+                @php $rowNum++; @endphp
                 <tr>
-                    <td class="col-no">{{ $i + 1 }}</td>
+                    <td class="col-no">{{ $rowNum }}</td>
                     <td class="col-barang">{{ $detail->namabarang }}</td>
                     <td class="col-kemasan">
                         @if($detail->namakemasan)
@@ -230,6 +262,8 @@
             </tbody>
         </table>
 
+        @if($loop->last)
+        <div class="closing-block">
         {{-- ════ RINGKASAN ════ --}}
         <div class="summary">
             <div class="summary-col">
@@ -276,7 +310,10 @@
                 <div class="sign-space">_____________________</div>
             </div>
         </div>
+        </div>
+        @endif
 
     </div>
+    @endforeach
 </body>
 </html>
